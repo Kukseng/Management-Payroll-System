@@ -5,7 +5,7 @@ import com.example.hr_managment_system.domain.Department;
 import java.time.LocalDateTime;
 
 public record EmployeeResponse(
-        String id,
+        String employeeId,
         String firstName,
         String lastName,
         String email,

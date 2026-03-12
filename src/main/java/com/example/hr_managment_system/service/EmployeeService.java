@@ -2,6 +2,9 @@ package com.example.hr_managment_system.service;
 
 import com.example.hr_managment_system.dto.Employee.EmployeeRequest;
 import com.example.hr_managment_system.dto.Employee.EmployeeResponse;
+import com.example.hr_managment_system.dto.Employee.EmployeeUpdate;
+
+import java.util.List;
 
 public interface EmployeeService {
     /**
@@ -15,13 +18,13 @@ public interface EmployeeService {
 
      **/
 
-    EmployeeResponse getAllEmployees(Boolean isActive);
+    List<EmployeeResponse> getAllEmployees(Boolean isActive);
 
     EmployeeResponse createEmployee(EmployeeRequest request);
 
     EmployeeResponse getEmployeeById(String id);
 
-    EmployeeResponse updateEmployee(String id, EmployeeRequest request);
+    EmployeeResponse updateEmployee(String id, EmployeeUpdate employeeUpdate);
 
     void deleteEmployee(String id);
 

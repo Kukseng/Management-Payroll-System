@@ -2,7 +2,6 @@ package com.example.hr_managment_system.domain;
 
 
 import jakarta.persistence.*;
-import lombok.Generated;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,7 +21,7 @@ public class Department {
     private String departmentName;
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "manager_id", nullable = false)
+    @JoinColumn(name = "manager_id")
     private Employee managerId;
 
     @OneToMany(cascade = CascadeType.ALL)

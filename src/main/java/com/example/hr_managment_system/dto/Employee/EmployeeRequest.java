@@ -1,12 +1,14 @@
 package com.example.hr_managment_system.dto.Employee;
 
-import com.example.hr_managment_system.domain.Department;
 import com.example.hr_managment_system.util.EmplomentType;
+
+import java.time.LocalDate;
 
 public record EmployeeRequest(
         String firstName,
         String lastName,
         String email,
+        LocalDate dateOfBirth,
         String departmentId,
         String roleId,
         EmplomentType employmentType,
