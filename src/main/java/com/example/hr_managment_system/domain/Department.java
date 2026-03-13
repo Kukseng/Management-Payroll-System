@@ -28,4 +28,10 @@ public class Department {
     @JoinColumn(name = "department_id")
     private Set<Employee> employees;
 
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "department_id")
+    private Set<Attendance> attendance;
+
+
+
 }

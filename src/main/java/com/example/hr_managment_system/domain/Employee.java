@@ -64,5 +64,9 @@ public class Employee {
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PerformanceReview> performanceReviews;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shift_id", nullable = false)
+    private Shift shift;
+
 
 }

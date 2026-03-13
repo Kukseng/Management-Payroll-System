@@ -51,7 +51,7 @@ public class EmployeeImpl implements EmployeeService {
 //        Department department = departmentRepository.findByDepartmentName(request.).orElseThrow(
 //                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found")
 //        );
-        Role role = roleRepository.findById(request.roleId()).orElseThrow(
+        Role role = roleRepository. findByRoleId(request.roleId()).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found")
         );
 

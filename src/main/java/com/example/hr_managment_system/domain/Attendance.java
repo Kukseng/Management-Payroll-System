@@ -22,6 +22,7 @@ public class Attendance {
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
 
+
     @Column(name = "clock_in", nullable = false)
     private LocalDateTime clockIn;
 
@@ -31,15 +32,13 @@ public class Attendance {
     @Column(name = "latitude_in")
     private Double latitudeIn;
 
-    @Column(name = "longitude_in")
-    private Double longitudeIn;
-
-    @Column(name = "latitude_out")
-    private Double latitudeOut;
-
     @Column(name = "longitude_out")
     private Double longitudeOut;
 
     @Column(name = "status", nullable = false)
     private StatusUtil status; // e.g., "PRESENT", "LATE", "ABSENT"
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn( nullable = false)
+    private Department department;
 }
