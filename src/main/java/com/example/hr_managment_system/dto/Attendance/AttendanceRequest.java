@@ -2,7 +2,6 @@ package com.example.hr_managment_system.dto.Attendance;
 
 import com.example.hr_managment_system.util.StatusUtil;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record AttendanceRequest(
@@ -11,8 +10,11 @@ public record AttendanceRequest(
         String departmentId,
         LocalDateTime clockIn,
         LocalDateTime clockOut,
+        String qrCode,
         Double latitudeIn,
+        Double longitudeIn,
         Double latitudeOut,
+        Double longitudeOut,
         StatusUtil status
 
 ) {

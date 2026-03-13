@@ -19,4 +19,9 @@ public record AttendanceResponse(
         String statusName
 
 ) {
+    public static record PayrollResponse(
+
+
+    ) {
+    }
 }

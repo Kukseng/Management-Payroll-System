@@ -17,8 +17,8 @@ public interface AttendanceMapper {
     AttendanceResponse attendanceToAttendanceResponse(Attendance attendance);
 
 
-//    @Mapping(source = "employee.employeeId", target = "employeeId")
-//    @Mapping(source = "department.departmentId", target = "departmentId")
+    @Mapping(source = "employeeId", target = "employee.employeeId")
+    @Mapping(source = "departmentId", target = "department.departmentId")
     Attendance attendanceRequestToAttendance(AttendanceRequest attendanceRequest);
 
 }
