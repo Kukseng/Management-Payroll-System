@@ -9,4 +9,7 @@ public interface PayrollService {
     String processPayroll(PayrollRequest payrollRequest);
     PayrollResponse getPayslipByEmployeeIdAndMonth(String employeeId, Integer month, Integer year);
     List<PayrollResponse> getPayrollByEmployeeId(String employeeId);
+
+    PayrollResponse getPayrollByUuid(String uuid);
+
 }

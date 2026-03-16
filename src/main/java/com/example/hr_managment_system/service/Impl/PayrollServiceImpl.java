@@ -79,6 +79,17 @@ public class PayrollServiceImpl implements PayrollService {
                 .toList();
     }
 
+    @Override
+    public PayrollResponse getPayrollByUuid(String uuid) {
+
+        if (payrollRepository.existsByPayrollId(uuid)){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Payroll already processed for this uuid.");
+        }
+
+        return payrollRepository.findByPayrollId(uuid).map(payrollMapper::PayrolltoPayrollResponse).orElseThrow(()
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payroll not found for this uuid."));
+    }
+
 
     private void validatePayrollRequest(PayrollRequest payrollRequest) {
         if (payrollRequest == null) {

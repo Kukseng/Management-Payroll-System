@@ -38,6 +38,13 @@ public class PayrollController {
         return payrollService.processPayroll(payrollRequest);
     }
 
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping("/{uuid}")
+
+    public PayrollResponse getPayrollByUuid(@PathVariable String uuid) {
+        return payrollService.getPayrollByUuid(uuid);
+    }
+
 }
 //String processPayroll(PayrollRequest payrollRequest);
 //    PayrollResponse getPayslipByEmployeeIdAndMonth(Integer employeeId, Integer month, Integer year);

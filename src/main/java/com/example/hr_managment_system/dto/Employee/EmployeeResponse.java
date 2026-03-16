@@ -17,7 +17,7 @@ public record EmployeeResponse(
         String employmentType,
         Double baseSalary,
         LocalDateTime createdAt,
-        boolean active
+        boolean IsActive
 ) {
 }
 // private Integer id;
