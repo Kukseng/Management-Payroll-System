@@ -9,6 +9,7 @@ public record EmployeeResponse(
         String firstName,
         String lastName,
         String email,
+        String username,
         String position,
         String departmentId,
         String departmentName,

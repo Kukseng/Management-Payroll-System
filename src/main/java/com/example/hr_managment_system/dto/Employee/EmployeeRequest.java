@@ -8,6 +8,8 @@ public record EmployeeRequest(
         String firstName,
         String lastName,
         String email,
+        String username,
+        String password,
         LocalDate dateOfBirth,
         String departmentId,
         String roleId,

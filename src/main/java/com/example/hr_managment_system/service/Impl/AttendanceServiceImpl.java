@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -90,6 +91,47 @@ public class AttendanceServiceImpl implements AttendanceService {
         return attendanceRepository.findAll().stream()
                 .filter(attendance -> attendance.getEmployee().getIsActive() == isActive)
                 .map(attendanceMapper::attendanceToAttendanceResponse).toList();
+    }
+
+    @Override
+    public List<AttendanceResponse> getMyAttendance(String principal, LocalDate from, LocalDate to) {
+        Employee employee = employeeRepository.findByUsernameAndIsActiveTrue(principal)
+                .or(() -> employeeRepository.findByEmailAndIsActiveTrue(principal))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+
+        LocalDate start = from == null ? LocalDate.now().minusDays(30) : from;
+        LocalDate end = to == null ? LocalDate.now() : to;
+
+        return attendanceRepository.findByEmployee_EmployeeIdAndClockInBetween(
+                        employee.getEmployeeId(),
+                        start.atStartOfDay(),
+                        end.plusDays(1).atStartOfDay().minusSeconds(1)
+                )
+                .stream()
+                .map(attendanceMapper::attendanceToAttendanceResponse)
+                .toList();
+    }
+
+    @Override
+    public List<AttendanceResponse> getAttendanceReport(String departmentId, Integer month, Integer year) {
+        if (departmentId == null || departmentId.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "departmentId is required");
+        }
+        if (month == null || month < 1 || month > 12 || year == null || year < 2000) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid month and year are required");
+        }
+
+        LocalDate start = LocalDate.of(year, month, 1);
+        LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+
+        return attendanceRepository.findByDepartment_DepartmentIdAndClockInBetween(
+                        departmentId,
+                        start.atStartOfDay(),
+                        end.plusDays(1).atStartOfDay().minusSeconds(1)
+                )
+                .stream()
+                .map(attendanceMapper::attendanceToAttendanceResponse)
+                .toList();
     }
 
     private void validateClockInRequest(AttendanceRequest attendanceRequest) {

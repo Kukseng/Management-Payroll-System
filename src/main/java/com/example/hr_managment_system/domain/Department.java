@@ -36,6 +36,9 @@ public class Department {
     @Column(name = "geofence_radius_meters")
     private Double geofenceRadiusMeters;
 
+    @Column (name = "is_active")
+    private Boolean isActive;
+
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "department_id")
     private Set<Employee> employees;

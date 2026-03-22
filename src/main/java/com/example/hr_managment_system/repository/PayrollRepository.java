@@ -13,6 +13,8 @@ public interface PayrollRepository extends JpaRepository<Payroll, String> {
 
     List<Payroll> findByEmployee_EmployeeId(String employeeId);
 
+    List<Payroll> findByMonthAndYear(Integer month, Integer year);
+
     Optional<Payroll> findByPayrollId(String uuid);
 
     boolean existsByPayrollId(String uuid);

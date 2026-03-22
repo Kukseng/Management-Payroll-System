@@ -28,12 +28,17 @@ public class Employee {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
+
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+
     @Column(name = "date_of_birth", nullable = false)
     private LocalDate dateOfBirth;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = true)
