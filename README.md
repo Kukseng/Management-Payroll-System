@@ -1,16 +1,5 @@
 # HR Management System API
 
-Spring Boot HR backend with JWT authentication and role-based endpoint protection.
-
-## Checklist
-
-- [x] JWT login endpoint
-- [x] Protected endpoints with `hasRole` / `hasAnyRole`
-- [x] Employee account management endpoints (role, status, reset password)
-- [x] Leave request and approval endpoints
-- [ ] Refresh/logout token revocation (currently stateless placeholder)
-- [ ] Complete API tests for all new endpoints
-
 ## Tech Stack
 
 - Java 21
