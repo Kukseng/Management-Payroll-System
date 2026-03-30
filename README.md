@@ -32,6 +32,11 @@ Key packages under `src/main/java/com/example/hr_managment_system`:
 - `dto` - request/response payloads
 - `mapper` - mapping data
 
+## Frontend Guide
+
+- Role-based UI guide for Admin, Employee, and HR (MANAGER):
+  `docs/frontend-role-ui-guide.md`
+
 ## Configuration
 
 

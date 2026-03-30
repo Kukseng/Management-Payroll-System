@@ -94,6 +94,30 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
+    public List<AttendanceResponse> getAttendanceForAdmin(Boolean isActive, LocalDate from, LocalDate to) {
+        LocalDate start = from == null ? LocalDate.now().minusDays(30) : from;
+        LocalDate end = to == null ? LocalDate.now() : to;
+
+        if (start.isAfter(end)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "from must be before or equal to to");
+        }
+
+        return attendanceRepository.findByClockInBetween(
+                        start.atStartOfDay(),
+                        end.plusDays(1).atStartOfDay().minusSeconds(1)
+                )
+                .stream()
+                .filter(attendance -> isActive == null || attendance.getEmployee().getIsActive().equals(isActive))
+                .map(attendanceMapper::attendanceToAttendanceResponse)
+                .toList();
+    }
+
+    @Override
+    public List<AttendanceResponse> getAttendanceForHr(String departmentId, Integer month, Integer year) {
+        return getAttendanceReport(departmentId, month, year);
+    }
+
+    @Override
     public List<AttendanceResponse> getMyAttendance(String principal, LocalDate from, LocalDate to) {
         Employee employee = employeeRepository.findByUsernameAndIsActiveTrue(principal)
                 .or(() -> employeeRepository.findByEmailAndIsActiveTrue(principal))
@@ -101,6 +125,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         LocalDate start = from == null ? LocalDate.now().minusDays(30) : from;
         LocalDate end = to == null ? LocalDate.now() : to;
+
+        if (start.isAfter(end)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "from must be before or equal to to");
+        }
 
         return attendanceRepository.findByEmployee_EmployeeIdAndClockInBetween(
                         employee.getEmployeeId(),

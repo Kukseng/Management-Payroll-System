@@ -25,4 +25,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
             LocalDateTime to
     );
 
+    List<Attendance> findByClockInBetween(
+            LocalDateTime from,
+            LocalDateTime to
+    );
+
 }

@@ -73,9 +73,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/performance/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/performance/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
                         .requestMatchers(HttpMethod.POST, "/api/v1/attendance/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/attendance/my").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/attendance/hr").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/attendance/admin").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/attendance/**").hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
 
         return http.build();
     }
