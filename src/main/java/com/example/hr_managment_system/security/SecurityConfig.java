@@ -11,11 +11,15 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.util.Objects;
 
 @Configuration
 @EnableWebSecurity
@@ -41,27 +45,41 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) {
         return configuration.getAuthenticationManager();
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                           DaoAuthenticationProvider authenticationProvider) throws Exception {
+                                           DaoAuthenticationProvider authenticationProvider) {
 
         http.csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // allow session for form login pages; APIs remain stateless via JWT
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                "/",
+                                "/login",
+                                "/logout",
+                                "/logout-page",
+                                "/change-password",
                                 "/swagger-ui.html",
                                 "/swagger-ui",
                                 "/swagger-ui/**",
                                 "/v3/api-docs",
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml",
-                                "/error"
+                                "/error",
+                                "/webjars/**",
+                                "/static/**",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**"
                         ).permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/hr/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers("/employee/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/v1/employee/**").hasRole("ADMIN")
@@ -78,6 +96,24 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/attendance/admin").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/attendance/**").hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated())
+                // Enable form login for Thymeleaf UI, redirect users by role
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .successHandler((HttpServletRequest request, HttpServletResponse response, Authentication authentication) -> {
+                            boolean isAdmin = authentication.getAuthorities().stream().anyMatch(a -> Objects.equals(a.getAuthority(), "ROLE_ADMIN"));
+                            boolean isManager = authentication.getAuthorities().stream().anyMatch(a -> Objects.equals(a.getAuthority(), "ROLE_MANAGER"));
+                            if (isAdmin) {
+                                response.sendRedirect("/admin/dashboard");
+                            } else if (isManager) {
+                                response.sendRedirect("/hr/dashboard");
+                            } else {
+                                response.sendRedirect("/employee/dashboard");
+                            }
+                        })
+                        .permitAll()
+                )
+                .logout(logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/login?logout").permitAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 

@@ -1,7 +1,7 @@
 package com.example.hr_managment_system.controller;
 
-import com.example.hr_managment_system.dto.Attendance.AttendanceRequest;
-import com.example.hr_managment_system.dto.Attendance.AttendanceResponse;
+import com.example.hr_managment_system.dto.attendance.AttendanceRequest;
+import com.example.hr_managment_system.dto.attendance.AttendanceResponse;
 import com.example.hr_managment_system.service.AttendanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

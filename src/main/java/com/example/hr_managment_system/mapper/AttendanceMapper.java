@@ -1,8 +1,8 @@
 package com.example.hr_managment_system.mapper;
 
 import com.example.hr_managment_system.domain.Attendance;
-import com.example.hr_managment_system.dto.Attendance.AttendanceRequest;
-import com.example.hr_managment_system.dto.Attendance.AttendanceResponse;
+import com.example.hr_managment_system.dto.attendance.AttendanceRequest;
+import com.example.hr_managment_system.dto.attendance.AttendanceResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

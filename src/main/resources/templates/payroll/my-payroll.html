@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>My Payroll</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+</head>
+<body class="bg-light"><div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">My Payroll</h1><a class="btn btn-outline-primary btn-sm" th:href="@{/employee/dashboard}">Back</a></div>
+    <div class="card shadow-sm"><div class="card-body"><table class="table table-striped"><thead><tr><th>ID</th><th>Month</th><th>Year</th><th>Gross</th><th>Net</th><th>Status</th></tr></thead><tbody id="rows"><tr><td colspan="6">Loading...</td></tr></tbody></table></div></div>
+</div>
+<script>
+fetch('/api/v1/auth/me', { headers: { 'Accept': 'application/json' } }).then(r=>r.json()).then(async me => {
+  const data = await (await fetch(`/api/v1/payroll/employee/${me.employeeId}`, { headers:{'Accept': 'application/json'}})).json();
+  const rows = document.getElementById('rows');
+  rows.innerHTML = data.map(p => `<tr><td><a href="/employee/payroll/${p.payrollId}">${p.payrollId||''}</a></td><td>${p.month||''}</td><td>${p.year||''}</td><td>${p.grossSalary||''}</td><td>${p.netPay||''}</td><td>${p.status||''}</td></tr>`).join('') || '<tr><td colspan="6">No payroll records</td></tr>';
+});
+</script>
+</body>
+</html>
+

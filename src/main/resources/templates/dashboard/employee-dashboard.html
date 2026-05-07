@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard - HR Management System</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+        }
+
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 20px 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 20px;
+        }
+
+        .sidebar .logo h3 {
+            margin: 0;
+            font-size: 1.3em;
+        }
+
+        .sidebar .nav-menu {
+            list-style: none;
+        }
+
+        .sidebar .nav-menu a {
+            display: block;
+            padding: 12px 20px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar .nav-menu a:hover {
+            background-color: rgba(255,255,255,0.1);
+            border-left-color: var(--secondary-color);
+        }
+
+        .sidebar .nav-menu a.active {
+            background-color: rgba(255,255,255,0.2);
+            border-left-color: #fff;
+        }
+
+        .sidebar .nav-menu .menu-label {
+            padding: 15px 20px 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-top: 10px;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar-custom {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .stat-card .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .stat-card i {
+            font-size: 2em;
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 8px 8px 0 0;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .table thead th {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .footer {
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin-top: auto;
+        }
+
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .clock-button {
+            font-size: 1.2em;
+            padding: 15px 30px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h3><i class="fas fa-building"></i> HR System</h3>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/employee/dashboard" class="active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">My Info</li>
+                <li><a href="/employee/profile"><i class="fas fa-user"></i> My Profile</a></li>
+                <li class="menu-label">Attendance & Leave</li>
+                <li><a href="/employee/attendance/clock-inout"><i class="fas fa-clock"></i> Clock In/Out</a></li>
+                <li><a href="/employee/attendance"><i class="fas fa-calendar-check"></i> My Attendance</a></li>
+                <li><a href="/employee/leaves/request"><i class="fas fa-file-alt"></i> Request Leave</a></li>
+                <li><a href="/employee/leaves"><i class="fas fa-history"></i> My Leaves</a></li>
+                <li class="menu-label">Compensation</li>
+                <li><a href="/employee/payroll"><i class="fas fa-money-bill"></i> My Payroll</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <nav class="navbar-custom">
+                <div>
+                    <span>Employee Dashboard</span>
+                </div>
+                <div>
+                    <span th:text="${username} ?: 'Employee'"></span>
+                    <i class="fas fa-user-circle" style="font-size: 1.5em; margin-left: 10px;"></i>
+                </div>
+            </nav>
+
+            <div class="content">
+                <div class="welcome-banner">
+                    <h2><i class="fas fa-hand-paper"></i> Welcome back, <span th:text="${username}"></span>!</h2>
+                    <p>Manage your attendance, leave, and view your payroll information</p>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-flash"></i> Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="clockInBtn" class="btn btn-success btn-sm clock-button" onclick="clockIn()">
+                            <i class="fas fa-sign-in-alt"></i> Clock In
+                        </button>
+                        <button id="clockOutBtn" class="btn btn-danger btn-sm clock-button" onclick="clockOut()" style="display: none;">
+                            <i class="fas fa-sign-out-alt"></i> Clock Out
+                        </button>
+                        <a href="/employee/leaves/request" class="btn btn-primary btn-sm clock-button">
+                            <i class="fas fa-file-alt"></i> Request Leave
+                        </a>
+                        <a href="/employee/payroll" class="btn btn-info btn-sm clock-button">
+                            <i class="fas fa-money-bill"></i> View Payroll
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <i class="fas fa-calendar-check"></i>
+                            <div class="stat-value" id="presentDays">0</div>
+                            <div class="stat-label">Days Present (This Month)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <i class="fas fa-file-alt"></i>
+                            <div class="stat-value" id="leaveBalance">0</div>
+                            <div class="stat-label">Leave Balance</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <i class="fas fa-clock"></i>
+                            <div class="stat-value" id="totalHours">0</div>
+                            <div class="stat-label">Hours Worked (This Month)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Attendance -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Recent Attendance</h5>
+                        <a href="/employee/attendance" class="btn btn-sm btn-light">View All</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Clock In</th>
+                                    <th>Clock Out</th>
+                                    <th>Hours Worked</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceList">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Leaves -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>My Leave Requests</h5>
+                        <a href="/employee/leaves" class="btn btn-sm btn-light">View All</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leavesList">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <p>&copy; 2026 HR Management System. All rights reserved.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        function clockIn() {
+            const employeeId = localStorage.getItem('employeeId');
+            fetch('/api/v1/attendance/clock-in', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    employeeId: employeeId,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert('Clock in successful');
+                document.getElementById('clockInBtn').style.display = 'none';
+                document.getElementById('clockOutBtn').style.display = 'inline-block';
+                location.reload();
+            })
+            .catch(err => alert('Error: ' + err));
+        }
+
+        function clockOut() {
+            const employeeId = localStorage.getItem('employeeId');
+            fetch('/api/v1/attendance/clock-out', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    employeeId: employeeId,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert('Clock out successful');
+                document.getElementById('clockOutBtn').style.display = 'none';
+                document.getElementById('clockInBtn').style.display = 'inline-block';
+                location.reload();
+            })
+            .catch(err => alert('Error: ' + err));
+        }
+
+        // Load attendance data
+        fetch('/api/v1/attendance/my', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById('attendanceList');
+            tbody.innerHTML = '';
+
+            if (data && data.length > 0) {
+                data.slice(0, 5).forEach(att => {
+                    const row = `<tr>
+                        <td>${att.date || 'N/A'}</td>
+                        <td>${att.clockInTime || 'N/A'}</td>
+                        <td>${att.clockOutTime || 'N/A'}</td>
+                        <td>${att.workHours || 0} hrs</td>
+                        <td><span class="badge bg-success">${att.status || 'Present'}</span></td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No attendance records</td></tr>';
+            }
+        })
+        .catch(err => console.log('Error:', err));
+
+        // Load leaves data
+        fetch('/api/v1/leave/my', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById('leavesList');
+            tbody.innerHTML = '';
+
+            if (data && data.length > 0) {
+                data.slice(0, 5).forEach(leave => {
+                    const statusColor = leave.status === 'PENDING' ? 'warning' :
+                                       leave.status === 'APPROVED' ? 'success' : 'danger';
+                        const row = `<tr>
+                        <td>${leave.type || 'N/A'}</td>
+                        <td>${leave.startDate || 'N/A'}</td>
+                        <td>${leave.endDate || 'N/A'}</td>
+                        <td><span class="badge bg-${statusColor}">${leave.status || 'Pending'}</span></td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No leave requests</td></tr>';
+            }
+        })
+        .catch(err => console.log('Error:', err));
+    </script>
+</body>
+</html>
+

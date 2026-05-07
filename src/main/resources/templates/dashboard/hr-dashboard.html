@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Dashboard - HR Management System</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+        }
+
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 20px 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 20px;
+        }
+
+        .sidebar .logo h3 {
+            margin: 0;
+            font-size: 1.3em;
+        }
+
+        .sidebar .nav-menu {
+            list-style: none;
+        }
+
+        .sidebar .nav-menu a {
+            display: block;
+            padding: 12px 20px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar .nav-menu a:hover {
+            background-color: rgba(255,255,255,0.1);
+            border-left-color: var(--secondary-color);
+        }
+
+        .sidebar .nav-menu a.active {
+            background-color: rgba(255,255,255,0.2);
+            border-left-color: #fff;
+        }
+
+        .sidebar .nav-menu .menu-label {
+            padding: 15px 20px 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-top: 10px;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar-custom {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .stat-card .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .stat-card i {
+            font-size: 2em;
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 8px 8px 0 0;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+
+        .table thead th {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .footer {
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin-top: auto;
+        }
+
+        .status-badge-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge-approved {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-badge-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h3><i class="fas fa-building"></i> HR System</h3>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/hr/dashboard" class="active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">Management</li>
+                <li><a href="/hr/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
+                <li><a href="/hr/attendance"><i class="fas fa-clock"></i> Attendance Report</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <nav class="navbar-custom">
+                <div>
+                    <span>HR Dashboard</span>
+                </div>
+                <div>
+                    <span th:text="${username} ?: 'HR'"></span>
+                    <i class="fas fa-user-circle" style="font-size: 1.5em; margin-left: 10px;"></i>
+                </div>
+            </nav>
+
+            <div class="content">
+                <h2>Welcome to HR Dashboard</h2>
+                <p class="text-muted">Manage leave requests and attendance reports</p>
+
+                <!-- Stats Row -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <i class="fas fa-file-alt"></i>
+                            <div class="stat-value" id="pendingCount">0</div>
+                            <div class="stat-label">Pending Leaves</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <i class="fas fa-check-circle"></i>
+                            <div class="stat-value" id="approvedCount">0</div>
+                            <div class="stat-label">Approved This Month</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <i class="fas fa-times-circle"></i>
+                            <div class="stat-value" id="rejectedCount">0</div>
+                            <div class="stat-label">Rejected This Month</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <a href="/hr/leaves/pending" class="btn btn-primary btn-sm"><i class="fas fa-file-alt"></i> Review Leaves</a>
+                        <a href="/hr/attendance" class="btn btn-info btn-sm"><i class="fas fa-chart-bar"></i> View Attendance</a>
+                    </div>
+                </div>
+
+                <!-- Pending Leave Requests -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Pending Leave Requests</h5>
+                        <a href="/hr/leaves/pending" class="btn btn-sm btn-light">View All</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Leave Type</th>
+                                    <th>From Date</th>
+                                    <th>To Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leavesList">
+                                <tr th:each="leave : ${pendingLeaves}" th:if="${pendingLeaves != null and pendingLeaves.size() > 0}">
+                                    <td th:text="${leave.employeeName}"></td>
+                                    <td th:text="${leave.type}"></td>
+                                    <td th:text="${leave.startDate}"></td>
+                                    <td th:text="${leave.endDate}"></td>
+                                    <td>
+                                        <span class="badge status-badge-pending" th:text="${leave.status}"></span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-success" onclick="approveLeave(this)" th:attr="data-id=${leave.leaveRequestId}">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="rejectLeave(this)" th:attr="data-id=${leave.leaveRequestId}">
+                                            <i class="fas fa-times"></i> Reject
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr th:if="${pendingLeaves == null or pendingLeaves.size() == 0}">
+                                    <td colspan="6" class="text-center text-muted">No pending leave requests</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <p>&copy; 2026 HR Management System. All rights reserved.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        function approveLeave(btn) {
+            const leaveId = btn.getAttribute('data-id');
+            const remarks = prompt('Enter remarks (optional):');
+
+            fetch(`/api/v1/leave/${leaveId}/approve`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ remarks: remarks || '' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert('Leave approved successfully');
+                location.reload();
+            })
+            .catch(err => alert('Error approving leave: ' + err));
+        }
+
+        function rejectLeave(btn) {
+            const leaveId = btn.getAttribute('data-id');
+            const remarks = prompt('Enter rejection remarks:');
+
+            if (!remarks) return;
+
+            fetch(`/api/v1/leave/${leaveId}/reject`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ remarks: remarks })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert('Leave rejected successfully');
+                location.reload();
+            })
+            .catch(err => alert('Error rejecting leave: ' + err));
+        }
+
+        // Load statistics
+        fetch('/api/v1/leave/pending', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('pendingCount').textContent = data.length || 0;
+            const approved = data.filter(l => l.status === 'APPROVED').length;
+            const rejected = data.filter(l => l.status === 'REJECTED').length;
+            document.getElementById('approvedCount').textContent = approved || 0;
+            document.getElementById('rejectedCount').textContent = rejected || 0;
+        })
+        .catch(err => console.log('Error:', err));
+    </script>
+</body>
+</html>
+

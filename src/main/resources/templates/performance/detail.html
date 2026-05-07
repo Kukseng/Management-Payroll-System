@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Performance Detail</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+</head>
+<body class="bg-light"><div class="container py-5" style="max-width: 900px;">
+    <div class="card shadow-sm"><div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">Performance Detail</h1><a class="btn btn-outline-primary btn-sm" href="javascript:history.back()">Back</a></div>
+        <p class="text-muted">This page is ready for loading a specific performance review by id.</p>
+        <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Review ID</label><input class="form-control" id="reviewId" placeholder="performance-id"></div>
+            <div class="col-12"><button class="btn btn-primary" onclick="loadReview()">Load Review</button></div>
+        </div>
+        <div id="result" class="mt-3"></div>
+    </div></div>
+</div>
+<script>
+async function loadReview(){
+  const res = await fetch(`/api/v1/performance/${document.getElementById('reviewId').value}`, { headers:{'Accept': 'application/json'}});
+  const result = document.getElementById('result');
+  if (!res.ok) { result.innerHTML = `<div class="alert alert-danger">${await res.text()}</div>`; return; }
+  const p = await res.json();
+  result.innerHTML = `<div class="card"><div class="card-body"><div><strong>ID:</strong> ${p.performanceReviewId||''}</div><div><strong>Score:</strong> ${p.kpiScore||''}</div><div><strong>Review Date:</strong> ${p.reviewDate||''}</div></div></div>`;
+}
+</script>
+</body>
+</html>
+

@@ -1,6 +1,7 @@
 package com.example.hr_managment_system.dto.Employee;
 
 import com.example.hr_managment_system.domain.Department;
+import lombok.Builder;
 
 import java.time.LocalDateTime;
 
@@ -18,8 +19,10 @@ public record EmployeeResponse(
         String employmentType,
         Double baseSalary,
         LocalDateTime createdAt,
-        boolean IsActive
+        boolean isActive
 ) {
+
+
 }
 // private Integer id;
 //    private String firstName;

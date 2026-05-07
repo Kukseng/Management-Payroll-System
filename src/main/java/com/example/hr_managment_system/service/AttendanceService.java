@@ -1,7 +1,7 @@
 package com.example.hr_managment_system.service;
 
-import com.example.hr_managment_system.dto.Attendance.AttendanceRequest;
-import com.example.hr_managment_system.dto.Attendance.AttendanceResponse;
+import com.example.hr_managment_system.dto.attendance.AttendanceRequest;
+import com.example.hr_managment_system.dto.attendance.AttendanceResponse;
 
 import java.time.LocalDate;
 import java.util.List;

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Admin Attendance Report</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+</head>
+<body class="bg-light"><div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">Admin Attendance Report</h1><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/dashboard}">Back</a></div>
+    <div class="card shadow-sm mb-3"><div class="card-body row g-3 align-items-end">
+        <div class="col-md-3"><label class="form-label">Is Active</label><select class="form-select" id="isActive"><option value="">All</option><option value="true">Active</option><option value="false">Inactive</option></select></div>
+        <div class="col-md-3"><label class="form-label">From</label><input class="form-control" id="from" type="date"></div>
+        <div class="col-md-3"><label class="form-label">To</label><input class="form-control" id="to" type="date"></div>
+        <div class="col-md-3"><button class="btn btn-primary" onclick="loadReport()">Load Report</button></div>
+    </div></div>
+    <div class="card shadow-sm"><div class="card-body"><table class="table table-striped"><thead><tr><th>ID</th><th>Employee</th><th>Department</th><th>Clock In</th><th>Status</th></tr></thead><tbody id="rows"><tr><td colspan="5">Use filters to load data</td></tr></tbody></table></div></div>
+</div>
+<script>
+function buildAuthHeaders(){
+  const token = localStorage.getItem('token');
+  return token
+    ? {'Accept': 'application/json', 'Authorization': `Bearer ${token}`}
+    : {'Accept': 'application/json'};
+}
+
+async function loadReport(){
+  const qs = new URLSearchParams();
+  if (document.getElementById('isActive').value !== '') qs.set('isActive', document.getElementById('isActive').value);
+  if (document.getElementById('from').value) qs.set('from', document.getElementById('from').value);
+  if (document.getElementById('to').value) qs.set('to', document.getElementById('to').value);
+  const rows = document.getElementById('rows');
+  try {
+    const res = await fetch(`/api/v1/attendance/admin?${qs.toString()}`, { headers: buildAuthHeaders() });
+    if (!res.ok) {
+      const err = await res.text();
+      rows.innerHTML = `<tr><td colspan="5">${err || 'Failed to load records'}</td></tr>`;
+      return;
+    }
+    const data = await res.json();
+    rows.innerHTML = data.map(a => `<tr><td>${a.attendanceId||''}</td><td>${a.employeeId||''}</td><td>${a.departmentName||a.departmentId||''}</td><td>${a.clockIn||''}</td><td>${a.statusName||a.status||''}</td></tr>`).join('') || '<tr><td colspan="5">No records</td></tr>';
+  } catch (_) {
+    rows.innerHTML = '<tr><td colspan="5">Failed to load records</td></tr>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadReport);
+</script>
+</body>
+</html>

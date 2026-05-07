@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Pending Leaves</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+</head>
+<body class="bg-light"><div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">Pending Leave Requests</h1><a class="btn btn-outline-primary btn-sm" th:href="@{/hr/dashboard}">Back</a></div>
+    <div class="card shadow-sm"><div class="card-body"><table class="table table-striped"><thead><tr><th>ID</th><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Actions</th></tr></thead><tbody id="rows"><tr><td colspan="6">Loading...</td></tr></tbody></table></div></div>
+</div>
+<script>
+async function refresh(){
+  const data = await (await fetch('/api/v1/leave/pending', { headers:{'Accept': 'application/json'}})).json();
+  const rows = document.getElementById('rows');
+  rows.innerHTML = data.map(l => `<tr><td>${l.leaveRequestId||''}</td><td>${l.employeeName||l.employeeId||''}</td><td>${l.type||''}</td><td>${l.startDate||''}</td><td>${l.endDate||''}</td><td><button class="btn btn-sm btn-success" onclick="approve('${l.leaveRequestId}')">Approve</button> <button class="btn btn-sm btn-danger" onclick="reject('${l.leaveRequestId}')">Reject</button></td></tr>`).join('') || '<tr><td colspan="6">No pending leaves</td></tr>';
+}
+async function approve(id){
+  await fetch(`/api/v1/leave/${id}/approve`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({remarks:''})});
+  refresh();
+}
+async function reject(id){
+  await fetch(`/api/v1/leave/${id}/reject`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({remarks:'Rejected from UI'})});
+  refresh();
+}
+refresh();
+</script>
+</body>
+</html>
+

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 Forbidden</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <style>
+        body { background: #f8f9fa; font-family: Arial, sans-serif; }
+        .center { max-width: 700px; margin: 80px auto; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <h1 class="display-4">403</h1>
+        <p class="lead">Forbidden — you don't have permission to access this page.</p>
+        <a class="btn btn-primary" th:href="@{/login}">Go to Login</a>
+    </div>
+</body>
+</html>
+

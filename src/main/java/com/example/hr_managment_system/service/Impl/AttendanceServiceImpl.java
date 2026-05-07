@@ -3,8 +3,8 @@ package com.example.hr_managment_system.service.Impl;
 import com.example.hr_managment_system.domain.Attendance;
 import com.example.hr_managment_system.domain.Department;
 import com.example.hr_managment_system.domain.Employee;
-import com.example.hr_managment_system.dto.Attendance.AttendanceRequest;
-import com.example.hr_managment_system.dto.Attendance.AttendanceResponse;
+import com.example.hr_managment_system.dto.attendance.AttendanceRequest;
+import com.example.hr_managment_system.dto.attendance.AttendanceResponse;
 import com.example.hr_managment_system.mapper.AttendanceMapper;
 import com.example.hr_managment_system.repository.AttendanceRepository;
 import com.example.hr_managment_system.repository.DepartmentRepository;
@@ -59,6 +59,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public AttendanceResponse clockOut(AttendanceRequest attendanceRequest) {
+        validateClockOutRequest(attendanceRequest);
 
         Employee employee  = employeeRepository.findByEmployeeId(attendanceRequest.employeeId()).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -70,16 +71,30 @@ public class AttendanceServiceImpl implements AttendanceService {
                         "Department with ID " + attendanceRequest.departmentId() + " does not exist.")
         );
 
-        if (!attendanceRepository.existsByStatus(attendanceRequest.status())){
-            Attendance attendance = new Attendance();
-            attendance.setStatus(StatusUtil.None);
-            attendance.setClockOut(LocalDateTime.now());
-            attendanceRepository.save(attendance);
+        validateEmployeeDepartment(employee, department);
+
+        Attendance attendance = attendanceRepository
+                .findTopByEmployee_EmployeeIdAndDepartment_DepartmentIdAndClockOutIsNullOrderByClockInDesc(
+                        attendanceRequest.employeeId(),
+                        attendanceRequest.departmentId()
+                )
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "No open clock-in record found for this employee and department."
+                ));
+
+        if (attendanceRequest.latitudeOut() != null || attendanceRequest.longitudeOut() != null) {
+            if (attendanceRequest.latitudeOut() == null || attendanceRequest.longitudeOut() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Both latitudeOut and longitudeOut are required together.");
+            }
+            validateGeoFence(attendanceRequest.latitudeOut(), attendanceRequest.longitudeOut(), department);
+            attendance.setLatitudeOut(attendanceRequest.latitudeOut());
+            attendance.setLongitudeOut(attendanceRequest.longitudeOut());
         }
 
-        Attendance attendance = attendanceMapper.attendanceRequestToAttendance(attendanceRequest);
-        attendance.setEmployee(employee);
-        attendance.setDepartment(department);
+        if (attendanceRequest.status() != null) {
+            attendance.setStatus(attendanceRequest.status());
+        }
         attendance.setClockOut(LocalDateTime.now());
         attendanceRepository.save(attendance);
 
@@ -89,7 +104,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     public List<AttendanceResponse> getAttendanceByEmployeeId(Boolean isActive) {
         return attendanceRepository.findAll().stream()
-                .filter(attendance -> attendance.getEmployee().getIsActive() == isActive)
+                .filter(attendance -> hasMatchingActiveStatus(attendance, isActive))
                 .map(attendanceMapper::attendanceToAttendanceResponse).toList();
     }
 
@@ -107,7 +122,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                         end.plusDays(1).atStartOfDay().minusSeconds(1)
                 )
                 .stream()
-                .filter(attendance -> isActive == null || attendance.getEmployee().getIsActive().equals(isActive))
+                .filter(attendance -> hasMatchingActiveStatus(attendance, isActive))
                 .map(attendanceMapper::attendanceToAttendanceResponse)
                 .toList();
     }
@@ -177,6 +192,15 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
     }
 
+    private void validateClockOutRequest(AttendanceRequest attendanceRequest) {
+        if (isBlank(attendanceRequest.employeeId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "employeeId is required for clock-out.");
+        }
+        if (isBlank(attendanceRequest.departmentId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "departmentId is required for clock-out.");
+        }
+    }
+
     private void validateEmployeeDepartment(Employee employee, Department department) {
         Department employeeDepartment = employee.getDepartment();
         if (employeeDepartment == null || employeeDepartment.getDepartmentId() == null
@@ -225,5 +249,15 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private boolean hasMatchingActiveStatus(Attendance attendance, Boolean isActive) {
+        if (attendance == null || attendance.getEmployee() == null) {
+            return false;
+        }
+        if (isActive == null) {
+            return true;
+        }
+        return isActive.equals(attendance.getEmployee().getIsActive());
     }
 }

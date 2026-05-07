@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Clock In/Out</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+</head>
+<body class="bg-light"><div class="container py-5" style="max-width: 900px;">
+    <div class="card shadow-sm"><div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">Clock In / Out</h1><a class="btn btn-outline-primary btn-sm" th:href="@{/employee/dashboard}">Back</a></div>
+        <div id="msg"></div>
+        <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Employee ID</label><input class="form-control" id="employeeId" placeholder="emp-id"></div>
+            <div class="col-md-6"><label class="form-label">Department ID</label><input class="form-control" id="departmentId" placeholder="dept-id"></div>
+            <div class="col-md-6"><label class="form-label">QR Code</label><input class="form-control" id="qrCode" placeholder="QR-..."></div>
+            <div class="col-md-6"><label class="form-label">Status</label><select class="form-select" id="status"><option>PRESENT</option><option>LATE</option><option>None</option><option>ABSENT</option></select></div>
+            <div class="col-md-6"><label class="form-label">Latitude In</label><input class="form-control" type="number" step="any" id="latitudeIn"></div>
+            <div class="col-md-6"><label class="form-label">Longitude In</label><input class="form-control" type="number" step="any" id="longitudeIn"></div>
+            <div class="col-md-6"><label class="form-label">Latitude Out</label><input class="form-control" type="number" step="any" id="latitudeOut"></div>
+            <div class="col-md-6"><label class="form-label">Longitude Out</label><input class="form-control" type="number" step="any" id="longitudeOut"></div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-success" onclick="submitClock('clock-in')">Clock In</button>
+                <button class="btn btn-danger" onclick="submitClock('clock-out')">Clock Out</button>
+            </div>
+        </div>
+    </div></div>
+</div>
+<script>
+// Auto-load current user's employee ID on page load
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const res = await fetch('/api/v1/auth/me', {
+      headers: {'Accept': 'application/json'}
+    });
+    if (res.ok) {
+      const user = await res.json();
+      document.getElementById('employeeId').value = user.employeeId || '';
+    }
+  } catch (e) {
+    console.log('Could not load user data, please enter manually');
+  }
+});
+
+async function submitClock(type) {
+  const msg = document.getElementById('msg');
+  const token = localStorage.getItem('token');
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  if (!document.getElementById('employeeId').value) {
+    msg.innerHTML = '<div class="alert alert-danger">Employee ID is required</div>';
+    return;
+  }
+  if (!document.getElementById('departmentId').value) {
+    msg.innerHTML = '<div class="alert alert-danger">Department ID is required</div>';
+    return;
+  }
+
+  const payload = {
+    employeeId: document.getElementById('employeeId').value,
+    departmentId: document.getElementById('departmentId').value,
+    qrCode: document.getElementById('qrCode').value || 'QR-DEFAULT',
+    latitudeIn: parseFloat(document.getElementById('latitudeIn').value) || 0.0,
+    longitudeIn: parseFloat(document.getElementById('longitudeIn').value) || 0.0,
+    latitudeOut: document.getElementById('latitudeOut').value ? parseFloat(document.getElementById('latitudeOut').value) : null,
+    longitudeOut: document.getElementById('longitudeOut').value ? parseFloat(document.getElementById('longitudeOut').value) : null,
+    status: document.getElementById('status').value || 'PRESENT'
+  };
+
+  try {
+    const res = await fetch(`/api/v1/attendance/${type}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      msg.innerHTML = '<div class="alert alert-success">Attendance saved successfully!</div>';
+    } else if (res.status === 401) {
+      msg.innerHTML = '<div class="alert alert-danger">Session expired. Please login again.</div>';
+    } else {
+      const errorText = await res.text();
+      msg.innerHTML = `<div class="alert alert-danger">Error: ${errorText || 'Failed to save attendance'}</div>`;
+    }
+  } catch (error) {
+    msg.innerHTML = `<div class="alert alert-danger">Network error: ${error.message}</div>`;
+  }
+}
+</script>
+</body>
+</html>

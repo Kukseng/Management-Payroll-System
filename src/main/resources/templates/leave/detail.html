@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Leave Detail</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+</head>
+<body class="bg-light"><div class="container py-5" style="max-width: 900px;">
+    <div class="card shadow-sm"><div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">Leave Detail</h1><a class="btn btn-outline-primary btn-sm" href="javascript:history.back()">Back</a></div>
+        <p class="text-muted">This page is a reusable detail view for leave requests. You can extend it to load a specific request by id.</p>
+        <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Leave ID</label><input class="form-control" id="leaveId" placeholder="leave-id"></div>
+            <div class="col-md-6"><label class="form-label">Remarks</label><input class="form-control" id="remarks" placeholder="Approval / rejection remarks"></div>
+            <div class="col-12 d-flex gap-2"><button class="btn btn-success" onclick="approve()">Approve</button><button class="btn btn-danger" onclick="reject()">Reject</button></div>
+        </div>
+    </div></div>
+</div>
+<script>
+async function approve(){
+  await fetch(`/api/v1/leave/${document.getElementById('leaveId').value}/approve`, {
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({remarks:document.getElementById('remarks').value||''})
+  });
+}
+async function reject(){
+  await fetch(`/api/v1/leave/${document.getElementById('leaveId').value}/reject`, {
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({remarks:document.getElementById('remarks').value||''})
+  });
+}
+</script>
+</body>
+</html>
+
