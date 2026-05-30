@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Employee</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
 <body class="bg-light">
 <div class="container py-5" style="max-width: 900px;">
@@ -22,8 +23,8 @@
                 <div class="col-md-6"><label class="form-label">Username</label><input class="form-control" id="username" required></div>
                 <div class="col-md-6"><label class="form-label">Password</label><input class="form-control" type="password" id="password" required></div>
                 <div class="col-md-6"><label class="form-label">Date of Birth</label><input class="form-control" type="date" id="dateOfBirth" required></div>
-                <div class="col-md-4"><label class="form-label">Department ID</label><input class="form-control" id="departmentId" placeholder="IT or HR"></div>
-                <div class="col-md-4"><label class="form-label">Role ID</label><input class="form-control" id="roleId" placeholder="Role UUID"></div>
+                <div class="col-md-4"><label class="form-label">Department</label><select class="form-select" id="departmentId" required><option value="">Select Department...</option></select></div>
+                <div class="col-md-4"><label class="form-label">Role</label><select class="form-select" id="roleId" required><option value="">Select Role...</option></select></div>
                 <div class="col-md-4"><label class="form-label">Employment Type</label><select class="form-select" id="employmentType"><option>FULL_TIME</option><option>PART_TIME</option><option>CONTRACTOR</option><option>INTERN</option></select></div>
                 <div class="col-md-6"><label class="form-label">Base Salary</label><input class="form-control" type="number" step="0.01" id="baseSalary" value="3000"></div>
                 <div class="col-12"><button class="btn btn-primary" type="submit">Create</button></div>
@@ -32,6 +33,42 @@
     </div>
 </div>
 <script>
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load departments
+  try {
+    const deptRes = await fetch('/api/v1/department');
+    if (deptRes.ok) {
+      const depts = await deptRes.json();
+      const deptSelect = document.getElementById('departmentId');
+      depts.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.departmentId;
+        opt.textContent = d.departmentName;
+        deptSelect.appendChild(opt);
+      });
+    }
+  } catch (err) {
+    console.error('Error fetching departments:', err);
+  }
+
+  // Load roles
+  try {
+    const roleRes = await fetch('/api/v1/role');
+    if (roleRes.ok) {
+      const roles = await roleRes.json();
+      const roleSelect = document.getElementById('roleId');
+      roles.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.roleId;
+        opt.textContent = r.roleName;
+        roleSelect.appendChild(opt);
+      });
+    }
+  } catch (err) {
+    console.error('Error fetching roles:', err);
+  }
+});
+
 document.getElementById('employeeForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const payload = {

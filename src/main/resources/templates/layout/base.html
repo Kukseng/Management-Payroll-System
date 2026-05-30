@@ -7,275 +7,7 @@
 
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #27ae60;
-            --danger-color: #e74c3c;
-            --warning-color: #f39c12;
-            --light-color: #ecf0f1;
-            --dark-color: #2c3e50;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fa;
-            color: #333;
-        }
-
-        .wrapper {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            height: 100vh;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            padding: 20px 0;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            overflow-y: auto;
-            z-index: 1000;
-        }
-
-        .sidebar .logo {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            margin-bottom: 20px;
-        }
-
-        .sidebar .logo h3 {
-            margin: 0;
-            font-size: 1.3em;
-        }
-
-        .sidebar .nav-menu {
-            list-style: none;
-        }
-
-        .sidebar .nav-menu li {
-            margin: 0;
-        }
-
-        .sidebar .nav-menu a {
-            display: block;
-            padding: 12px 20px;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            border-left: 3px solid transparent;
-        }
-
-        .sidebar .nav-menu a:hover {
-            background-color: rgba(255,255,255,0.1);
-            border-left-color: var(--secondary-color);
-            padding-left: 22px;
-        }
-
-        .sidebar .nav-menu a.active {
-            background-color: rgba(255,255,255,0.2);
-            border-left-color: #fff;
-        }
-
-        .sidebar .nav-menu .menu-label {
-            padding: 15px 20px 10px;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            opacity: 0.7;
-            margin-top: 10px;
-        }
-
-        .main-content {
-            flex: 1;
-            margin-left: 250px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .navbar-custom {
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .navbar-custom .breadcrumb {
-            margin: 0;
-            padding: 0;
-        }
-
-        .navbar-custom .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-
-        .card {
-            border: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            border-radius: 8px 8px 0 0;
-        }
-
-        .table {
-            margin-bottom: 0;
-        }
-
-        .table thead th {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            font-weight: 600;
-        }
-
-        .table tbody tr:hover {
-            background-color: rgba(52, 152, 219, 0.05);
-        }
-
-        .btn-primary {
-            background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
-        }
-
-        .btn-primary:hover {
-            background-color: #2980b9;
-            border-color: #2980b9;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .stat-card .stat-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: var(--secondary-color);
-        }
-
-        .stat-card .stat-label {
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: var(--primary-color);
-            margin-bottom: 5px;
-        }
-
-        .form-control:focus {
-            border-color: var(--secondary-color);
-            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-        }
-
-        .alert {
-            border: none;
-            border-radius: 8px;
-        }
-
-        .badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.85em;
-        }
-
-        .status-active {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .status-pending {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .status-rejected {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        .status-approved {
-            background-color: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .footer {
-            background: var(--primary-color);
-            color: white;
-            text-align: center;
-            padding: 15px;
-            margin-top: auto;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(52, 152, 219, 0.3);
-            border-radius: 50%;
-            border-top-color: var(--secondary-color);
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                display: none;
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-
-            .content {
-                padding: 15px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
 <body>
     <div class="wrapper">
@@ -298,6 +30,7 @@
                 <li class="menu-label">Management</li>
                 <li><a th:href="@{/hr/leaves/pending}"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
                 <li><a th:href="@{/hr/attendance}"><i class="fas fa-clock"></i> Attendance Report</a></li>
+                <li><a th:href="@{/hr/payroll}"><i class="fas fa-money-bill"></i> Payroll</a></li>
                 <li class="menu-label">Other</li>
                 <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -361,7 +94,6 @@
                 return fetch(url, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     }
                 }).then(res => res.json());
@@ -371,7 +103,6 @@
                 return fetch(url, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
@@ -382,7 +113,6 @@
                 return fetch(url, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
@@ -393,7 +123,6 @@
                 return fetch(url, {
                     method: 'PATCH',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
@@ -404,7 +133,6 @@
                 return fetch(url, {
                     method: 'DELETE',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     }
                 }).then(res => res.ok);

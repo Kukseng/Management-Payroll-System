@@ -5,6 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Edit Employee</title>
 	<link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+	<link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
 <body class="bg-light">
 <div class="container py-5" style="max-width: 900px;">
@@ -21,6 +22,8 @@
 				<div class="col-md-6"><label class="form-label">Last Name</label><input class="form-control" id="lastName" th:value="${employee.lastName}" required></div>
 				<div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" id="email" th:value="${employee.email}" required></div>
 				<div class="col-md-6"><label class="form-label">Date of Birth</label><input class="form-control" type="date" id="dateOfBirth" th:value="${employee.dateOfBirth}"></div>
+				<div class="col-md-6"><label class="form-label">Department</label><select class="form-select" id="departmentId" required><option value="">Select Department...</option></select></div>
+				<div class="col-md-6"><label class="form-label">Role</label><select class="form-select" id="roleId" required><option value="">Select Role...</option></select></div>
 				<div class="col-12"><button class="btn btn-primary" type="submit">Save Changes</button></div>
 			</form>
 			<div th:if="${employee == null}" class="text-muted">Employee data is unavailable.</div>
@@ -28,14 +31,61 @@
 	</div>
 </div>
 <script th:inline="javascript">
-const employeeId = /*[[${employee.employeeId}]]*/ '';
+const employeeId = /*[[${employee?.employeeId}]]*/ '';
+const currentDeptId = /*[[${employee?.departmentId}]]*/ '';
+const currentRoleId = /*[[${employee?.roleId}]]*/ '';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load departments
+  try {
+    const deptRes = await fetch('/api/v1/department');
+    if (deptRes.ok) {
+      const depts = await deptRes.json();
+      const deptSelect = document.getElementById('departmentId');
+      depts.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.departmentId;
+        opt.textContent = d.departmentName;
+        if (d.departmentId === currentDeptId) {
+          opt.selected = true;
+        }
+        deptSelect.appendChild(opt);
+      });
+    }
+  } catch (err) {
+    console.error('Error fetching departments:', err);
+  }
+
+  // Load roles
+  try {
+    const roleRes = await fetch('/api/v1/role');
+    if (roleRes.ok) {
+      const roles = await roleRes.json();
+      const roleSelect = document.getElementById('roleId');
+      roles.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.roleId;
+        opt.textContent = r.roleName;
+        if (r.roleId === currentRoleId) {
+          opt.selected = true;
+        }
+        roleSelect.appendChild(opt);
+      });
+    }
+  } catch (err) {
+    console.error('Error fetching roles:', err);
+  }
+});
+
 document.getElementById('employeeEditForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const payload = {
     firstName: document.getElementById('firstName').value,
     lastName: document.getElementById('lastName').value,
     email: document.getElementById('email').value,
-    dateOfBirth: document.getElementById('dateOfBirth').value || null
+    dateOfBirth: document.getElementById('dateOfBirth').value || null,
+    departmentId: document.getElementById('departmentId').value || null,
+    roleId: document.getElementById('roleId').value || null
   };
   const res = await fetch(`/api/v1/employee/${employeeId}`, {
     method: 'PUT',

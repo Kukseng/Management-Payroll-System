@@ -9,7 +9,9 @@ import com.example.hr_managment_system.repository.EmployeeRepository;
 import com.example.hr_managment_system.repository.LeaveRequestRepository;
 import com.example.hr_managment_system.service.LeaveService;
 import com.example.hr_managment_system.util.StatusProgressUtil;
+import com.example.hr_managment_system.service.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,6 +20,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LeaveServiceImpl implements LeaveService {
@@ -26,6 +29,7 @@ public class LeaveServiceImpl implements LeaveService {
 
     private final LeaveRequestRepository leaveRequestRepository;
     private final EmployeeRepository employeeRepository;
+    private final EmailService emailService;
 
     @Override
     public LeaveResponse createLeaveRequest(LeaveCreateRequest request) {
@@ -46,7 +50,31 @@ public class LeaveServiceImpl implements LeaveService {
         leave.setType(request.type());
         leave.setStatus(StatusProgressUtil.PENDING);
 
-        return toResponse(leaveRequestRepository.save(leave));
+        LeaveRequest saved = leaveRequestRepository.save(leave);
+
+        try {
+            String managerEmail = "hr@company.com";
+            List<Employee> activeEmployees = employeeRepository.findAllByIsActiveTrue();
+            for (Employee emp : activeEmployees) {
+                if (emp.getRole() != null && emp.getRole().getRoleName() != null && 
+                    (com.example.hr_managment_system.util.RoleUtil.ADMIN == emp.getRole().getRoleName() || 
+                     com.example.hr_managment_system.util.RoleUtil.MANAGER == emp.getRole().getRoleName())) {
+                    managerEmail = emp.getEmail();
+                    break;
+                }
+            }
+            emailService.sendLeaveRequestEmail(
+                    managerEmail,
+                    employee.getFirstName() + " " + employee.getLastName(),
+                    saved.getType().toString(),
+                    saved.getStartDate().toString(),
+                    saved.getEndDate().toString()
+            );
+        } catch (Exception e) {
+            log.error("Failed to send leave request email: {}", e.getMessage());
+        }
+
+        return toResponse(saved);
     }
 
     @Override
@@ -109,7 +137,30 @@ public class LeaveServiceImpl implements LeaveService {
         leave.setApprovedBy(approver);
         leave.setStatus(status);
 
-        return toResponse(leaveRequestRepository.save(leave));
+        LeaveRequest saved = leaveRequestRepository.save(leave);
+
+        try {
+            Employee employee = saved.getEmployee();
+            if (employee != null) {
+                emailService.sendLeaveStatusEmail(
+                        employee.getEmail(),
+                        employee.getFirstName() + " " + employee.getLastName(),
+                        status.toString(),
+                        "Updated by " + approver.getFirstName() + " " + approver.getLastName()
+                );
+            }
+        } catch (Exception e) {
+            log.error("Failed to send leave status email: {}", e.getMessage());
+        }
+
+        return toResponse(saved);
+    }
+
+    @Override
+    public List<LeaveResponse> getAllLeaveRequests() {
+        return leaveRequestRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     private Employee findEmployeeByPrincipal(String principal) {

@@ -18,6 +18,7 @@ public record EmployeeResponse(
         String roleName,
         String employmentType,
         Double baseSalary,
+        java.time.LocalDate dateOfBirth,
         LocalDateTime createdAt,
         boolean isActive
 ) {

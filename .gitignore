@@ -35,3 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Local/Agent temp files
+.antigravitycli/
+cookies.txt

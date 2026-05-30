@@ -4,9 +4,17 @@ package com.example.hr_managment_system.controller;
 import com.example.hr_managment_system.dto.Payroll.PayrollRequest;
 import com.example.hr_managment_system.dto.Payroll.PayrollResponse;
 import com.example.hr_managment_system.service.PayrollService;
+import com.example.hr_managment_system.service.PdfService;
+import com.example.hr_managment_system.repository.PayrollRepository;
+import com.example.hr_managment_system.domain.Payroll;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.ContentDisposition;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -16,7 +24,8 @@ import java.util.List;
 public class PayrollController {
 
     private final PayrollService payrollService;
-
+    private final PdfService pdfService;
+    private final PayrollRepository payrollRepository;
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/employee/{employeeId}/month")
@@ -40,11 +49,24 @@ public class PayrollController {
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/{uuid}")
-
     public PayrollResponse getPayrollByUuid(@PathVariable String uuid) {
         return payrollService.getPayrollByUuid(uuid);
     }
 
+    @GetMapping("/{uuid}/download")
+    public ResponseEntity<byte[]> downloadPayslip(@PathVariable String uuid) {
+        Payroll payroll = payrollRepository.findByPayrollId(uuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payroll record not found."));
+
+        byte[] pdfBytes = pdfService.generatePayslipPdf(payroll);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        String filename = "payslip_" + payroll.getMonth() + "_" + payroll.getYear() + "_" + uuid.substring(0, 8) + ".pdf";
+        headers.setContentDisposition(ContentDisposition.builder("attachment").filename(filename).build());
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
 }
 //String processPayroll(PayrollRequest payrollRequest);
 //    PayrollResponse getPayslipByEmployeeIdAndMonth(Integer employeeId, Integer month, Integer year);

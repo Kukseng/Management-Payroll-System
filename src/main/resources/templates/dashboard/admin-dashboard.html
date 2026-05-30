@@ -6,190 +6,7 @@
     <title>Admin Dashboard - HR Management System</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #27ae60;
-            --danger-color: #e74c3c;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fa;
-        }
-
-        .wrapper {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            height: 100vh;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            padding: 20px 0;
-            overflow-y: auto;
-            z-index: 1000;
-        }
-
-        .sidebar .logo {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            margin-bottom: 20px;
-        }
-
-        .sidebar .logo h3 {
-            margin: 0;
-            font-size: 1.3em;
-        }
-
-        .sidebar .nav-menu {
-            list-style: none;
-        }
-
-        .sidebar .nav-menu a {
-            display: block;
-            padding: 12px 20px;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            border-left: 3px solid transparent;
-        }
-
-        .sidebar .nav-menu a:hover {
-            background-color: rgba(255,255,255,0.1);
-            border-left-color: var(--secondary-color);
-        }
-
-        .sidebar .nav-menu a.active {
-            background-color: rgba(255,255,255,0.2);
-            border-left-color: #fff;
-        }
-
-        .sidebar .nav-menu .menu-label {
-            padding: 15px 20px 10px;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            opacity: 0.7;
-            margin-top: 10px;
-        }
-
-        .main-content {
-            flex: 1;
-            margin-left: 250px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .navbar-custom {
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .stat-card .stat-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: var(--secondary-color);
-        }
-
-        .stat-card .stat-label {
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .stat-card i {
-            font-size: 2em;
-            color: var(--secondary-color);
-            margin-bottom: 10px;
-        }
-
-        .card {
-            border: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            border-radius: 8px 8px 0 0;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .btn-primary {
-            background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
-        }
-
-        .btn-primary:hover {
-            background-color: #2980b9;
-            border-color: #2980b9;
-        }
-
-        .table thead th {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-        }
-
-        .table tbody tr:hover {
-            background-color: rgba(52, 152, 219, 0.05);
-        }
-
-        .badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-        }
-
-        .footer {
-            background: var(--primary-color);
-            color: white;
-            text-align: center;
-            padding: 15px;
-            margin-top: auto;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
 <body>
     <div class="wrapper">
@@ -270,8 +87,32 @@
                     </div>
                 </div>
 
+                <!-- Charts Row -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="card-title mb-0 fw-bold"><i class="fas fa-chart-bar text-primary"></i> Payroll Expenses Trend</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="payrollChart" style="max-height: 250px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="card-title mb-0 fw-bold"><i class="fas fa-chart-pie text-primary"></i> Leaves by Type</h5>
+                            </div>
+                            <div class="card-body d-flex align-items-center justify-content-center">
+                                <canvas id="leaveChart" style="max-height: 220px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Recent Employees -->
-                <div class="card">
+                <div class="card shadow-sm">
                     <div class="card-header">
                         <h5>Recent Employees</h5>
                         <a href="/admin/employees" class="btn btn-sm btn-light">View All</a>
@@ -319,6 +160,7 @@
 
     <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
     <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
@@ -327,11 +169,7 @@
         }
 
         // Load pending leaves count
-        fetch('/api/v1/leave/pending', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        })
+        fetch('/api/v1/leave/pending')
         .then(res => res.json())
         .then(data => {
             document.getElementById('pendingLeaves').textContent = data.length || 0;
@@ -340,17 +178,70 @@
 
         // Load attendance for today
         const today = new Date().toISOString().split('T')[0];
-        fetch(`/api/v1/attendance/admin?from=${today}&to=${today}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        })
+        fetch(`/api/v1/attendance/admin?from=${today}&to=${today}`)
         .then(res => res.json())
         .then(data => {
             const present = data.filter(a => a.status === 'PRESENT').length;
             document.getElementById('presentToday').textContent = present || 0;
         })
         .catch(err => console.log('Error loading attendance:', err));
+
+        // Load Charts
+        fetch('/api/v1/analytics/payroll')
+        .then(r => r.json())
+        .then(data => {
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+            
+            new Chart(document.getElementById('payrollChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Net Payroll ($)',
+                        data: values,
+                        backgroundColor: '#6366f1',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        });
+
+        fetch('/api/v1/analytics/leaves')
+        .then(r => r.json())
+        .then(data => {
+            const types = data.byType || {};
+            const labels = Object.keys(types);
+            const values = Object.values(types);
+            
+            new Chart(document.getElementById('leaveChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#f43f5e']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        });
     </script>
 </body>
 </html>

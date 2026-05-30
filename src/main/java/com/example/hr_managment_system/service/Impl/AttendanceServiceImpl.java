@@ -95,7 +95,18 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (attendanceRequest.status() != null) {
             attendance.setStatus(attendanceRequest.status());
         }
-        attendance.setClockOut(LocalDateTime.now());
+        LocalDateTime clockOutTime = LocalDateTime.now();
+        attendance.setClockOut(clockOutTime);
+        if (attendance.getClockIn() != null) {
+            java.time.Duration duration = java.time.Duration.between(attendance.getClockIn(), clockOutTime);
+            double totalHours = duration.toMinutes() / 60.0;
+            attendance.setTotalHours(totalHours);
+            double overtime = totalHours > 8.0 ? totalHours - 8.0 : 0.0;
+            attendance.setOvertimeHours(overtime);
+        } else {
+            attendance.setTotalHours(0.0);
+            attendance.setOvertimeHours(0.0);
+        }
         attendanceRepository.save(attendance);
 
         return attendanceMapper.attendanceToAttendanceResponse(attendance);

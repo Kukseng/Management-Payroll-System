@@ -47,4 +47,10 @@ public class Attendance {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn( nullable = false)
     private Department department;
+
+    @Column(name = "total_hours")
+    private Double totalHours;
+
+    @Column(name = "overtime_hours")
+    private Double overtimeHours;
 }

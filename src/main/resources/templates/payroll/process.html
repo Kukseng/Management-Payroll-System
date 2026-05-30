@@ -1,39 +1,145 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Process Payroll</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Payroll - HR Management System</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
+    <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
-<body class="bg-light"><div class="container py-5" style="max-width: 900px;">
-    <div class="card shadow-sm"><div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">Process Payroll</h1><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/payroll}">Back</a></div>
-        <div id="msg"></div>
-        <form id="payrollForm" class="row g-3">
-            <div class="col-md-6"><label class="form-label">Employee ID</label><input class="form-control" id="employeeId" required></div>
-            <div class="col-md-3"><label class="form-label">Month</label><input class="form-control" type="number" id="month" min="1" max="12" required></div>
-            <div class="col-md-3"><label class="form-label">Year</label><input class="form-control" type="number" id="year" required></div>
-            <div class="col-md-6"><label class="form-label">Deductions</label><input class="form-control" type="number" step="0.01" id="deductions" value="0"></div>
-            <div class="col-12"><button class="btn btn-primary" type="submit">Run Payroll</button></div>
-        </form>
-    </div></div>
-</div>
-<script>
-document.getElementById('payrollForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const res = await fetch('/api/v1/payroll/process', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      employeeId: document.getElementById('employeeId').value,
-      month: Number(document.getElementById('month').value),
-      year: Number(document.getElementById('year').value),
-      deductions: Number(document.getElementById('deductions').value)
-    })
-  });
-  const msg = document.getElementById('msg');
-  msg.innerHTML = res.ok ? '<div class="alert alert-success">Payroll processed.</div>' : `<div class="alert alert-danger">${await res.text()}</div>`;
-});
-</script>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h3><i class="fas fa-building"></i> HR System</h3>
+            </div>
+            <ul class="nav-menu" th:if="${role == 'ADMIN'}">
+                <li><a href="/admin/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">Management</li>
+                <li><a href="/admin/employees"><i class="fas fa-users"></i> Employees</a></li>
+                <li><a href="/admin/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
+                <li><a href="/admin/attendance"><i class="fas fa-clock"></i> Attendance</a></li>
+                <li><a href="/admin/payroll" class="active"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+            <ul class="nav-menu" th:if="${role == 'MANAGER'}">
+                <li><a href="/hr/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">Management</li>
+                <li><a href="/hr/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
+                <li><a href="/hr/attendance"><i class="fas fa-clock"></i> Attendance Report</a></li>
+                <li><a href="/hr/payroll" class="active"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <nav class="navbar-custom">
+                <div>
+                    <span>Payroll Processing</span>
+                </div>
+                <div>
+                    <span th:text="${role == 'ADMIN' ? 'Admin' : 'HR Manager'}"></span>
+                    <i class="fas fa-user-circle" style="font-size: 1.5em; margin-left: 10px;"></i>
+                </div>
+            </nav>
+
+            <div class="content">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h4 mb-0"><i class="fas fa-calculator"></i> Run Payroll</h2>
+                    <a class="btn btn-outline-primary btn-sm" th:href="${role == 'ADMIN'} ? @{/admin/payroll} : @{/hr/payroll}">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                </div>
+
+                <div class="card shadow-sm" style="max-width: 700px;">
+                    <div class="card-body p-4">
+                        <div id="msg"></div>
+                        <form id="payrollForm" class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Select Employee</label>
+                                <select class="form-select" id="employeeId" required>
+                                    <option value="" disabled selected>Choose an employee...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Month</label>
+                                <input class="form-control" type="number" id="month" min="1" max="12" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Year</label>
+                                <input class="form-control" type="number" id="year" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Deductions ($)</label>
+                                <input class="form-control" type="number" step="0.01" id="deductions" value="0">
+                            </div>
+                            <div class="col-12 mt-4">
+                                <button class="btn btn-primary w-100" type="submit">
+                                    <i class="fas fa-play me-1"></i> Calculate & Process Payroll
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <p>&copy; 2026 HR Management System. All rights reserved.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        // Fetch all active employees to populate the select dropdown
+        fetch('/api/v1/employee?isActive=true')
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById('employeeId');
+            data.forEach(emp => {
+                const opt = document.createElement('option');
+                opt.value = emp.employeeId;
+                opt.textContent = `${emp.firstName} ${emp.lastName} (ID: ${emp.employeeId})`;
+                select.appendChild(opt);
+            });
+        })
+        .catch(err => console.error('Error loading employees:', err));
+
+        // Set default month & year to current
+        const now = new Date();
+        document.getElementById('month').value = now.getMonth() + 1;
+        document.getElementById('year').value = now.getFullYear();
+
+        document.getElementById('payrollForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const res = await fetch('/api/v1/payroll/process', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    employeeId: document.getElementById('employeeId').value,
+                    month: Number(document.getElementById('month').value),
+                    year: Number(document.getElementById('year').value),
+                    deductions: Number(document.getElementById('deductions').value)
+                })
+            });
+            const msg = document.getElementById('msg');
+            msg.innerHTML = res.ok 
+                ? '<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> Payroll processed successfully!</div>' 
+                : `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-1"></i> ${await res.text()}</div>`;
+        });
+    </script>
 </body>
 </html>
 

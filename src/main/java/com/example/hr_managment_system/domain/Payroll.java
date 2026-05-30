@@ -40,4 +40,10 @@ public class Payroll {
 
     @Column(name = "processed_at", nullable = false)
     private LocalDateTime processedAt;
+
+    @Column(name = "overtime_hours")
+    private Double overtimeHours;
+
+    @Column(name = "overtime_pay")
+    private Double overtimePay;
 }

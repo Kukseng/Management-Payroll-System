@@ -15,8 +15,9 @@ public record AttendanceResponse(
         Double latitudeIn,
         Double latitudeOut,
         StatusUtil status,
-        String statusName
-
+        String statusName,
+        Double totalHours,
+        Double overtimeHours
 ) {
     public static record PayrollResponse() {
     }

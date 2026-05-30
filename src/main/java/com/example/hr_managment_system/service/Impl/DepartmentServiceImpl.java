@@ -1,30 +1,72 @@
 package com.example.hr_managment_system.service.Impl;
 
+import com.example.hr_managment_system.domain.Department;
 import com.example.hr_managment_system.dto.Department.DepartmentRequest;
 import com.example.hr_managment_system.dto.Department.DepartmentResponse;
+import com.example.hr_managment_system.repository.DepartmentRepository;
 import com.example.hr_managment_system.service.DepartmentService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+@Service
+@RequiredArgsConstructor
 public class DepartmentServiceImpl implements DepartmentService {
+
+    private final DepartmentRepository departmentRepository;
 
     @Override
     public DepartmentResponse createDepartment(DepartmentRequest departmentRequest) {
-        return null;
+        if (departmentRepository.existsByDepartmentName(departmentRequest.DepartmentName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Department name already exists");
+        }
+        Department department = new Department();
+        department.setDepartmentName(departmentRequest.DepartmentName());
+        department.setManagerId(departmentRequest.managerId());
+        department.setQrCode(departmentRequest.qrCode());
+        department.setOfficeLongitude(departmentRequest.officeLongitude());
+        department.setGeofenceRadiusMeters(departmentRequest.geofenceRadiusMeters());
+        department.setIsActive(true);
+
+        Department saved = departmentRepository.save(department);
+        return mapToResponse(saved);
     }
 
     @Override
     public DepartmentResponse getDepartmentId(String id) {
-        return null;
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found"));
+        return mapToResponse(department);
     }
 
     @Override
     public List<DepartmentResponse> getAllDepartment() {
-        return List.of();
+        return departmentRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
     public void deleteDepartment(String id) {
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found"));
+        department.setIsActive(false);
+        departmentRepository.save(department);
+    }
 
+    private DepartmentResponse mapToResponse(Department department) {
+        return new DepartmentResponse(
+                department.getDepartmentId(),
+                department.getDepartmentName(),
+                department.getManagerId() != null ? department.getManagerId().getEmployeeId() : null,
+                department.getQrCode(),
+                department.getOfficeLatitude(),
+                department.getOfficeLongitude(),
+                department.getGeofenceRadiusMeters(),
+                department.getIsActive()
+        );
     }
 }

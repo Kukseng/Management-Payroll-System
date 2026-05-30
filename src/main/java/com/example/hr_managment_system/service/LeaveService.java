@@ -18,4 +18,6 @@ public interface LeaveService {
     LeaveResponse rejectLeave(String leaveId, String approverPrincipal);
 
     LeaveBalanceResponse getLeaveBalance(String employeeId);
+
+    List<LeaveResponse> getAllLeaveRequests();
 }

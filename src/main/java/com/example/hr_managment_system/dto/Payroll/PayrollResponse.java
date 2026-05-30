@@ -11,8 +11,9 @@ public record PayrollResponse(
         Double deductions,
         Double grossSalary,
         Double netPay,
-        String status
-
+        String status,
+        Double overtimeHours,
+        Double overtimePay
 ) {
 }
 // private Integer id;

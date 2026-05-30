@@ -1,16 +1,84 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Payroll Reports</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll Reports - HR Management System</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
+    <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
-<body class="bg-light"><div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">Payroll Reports</h1><a class="btn btn-outline-primary btn-sm" th:href="@{/admin/dashboard}">Back</a></div>
-    <div class="card shadow-sm"><div class="card-body p-4">
-        <p class="text-muted">Use this page to browse payroll records and jump into payroll processing.</p>
-        <a class="btn btn-primary" th:href="@{/admin/payroll/process}">Process Payroll</a>
-    </div></div>
-</div>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h3><i class="fas fa-building"></i> HR System</h3>
+            </div>
+            <ul class="nav-menu" th:if="${role == 'ADMIN'}">
+                <li><a href="/admin/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">Management</li>
+                <li><a href="/admin/employees"><i class="fas fa-users"></i> Employees</a></li>
+                <li><a href="/admin/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
+                <li><a href="/admin/attendance"><i class="fas fa-clock"></i> Attendance</a></li>
+                <li><a href="/admin/payroll" class="active"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+            <ul class="nav-menu" th:if="${role == 'MANAGER'}">
+                <li><a href="/hr/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">Management</li>
+                <li><a href="/hr/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
+                <li><a href="/hr/attendance"><i class="fas fa-clock"></i> Attendance Report</a></li>
+                <li><a href="/hr/payroll" class="active"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <nav class="navbar-custom">
+                <div>
+                    <span>Payroll Management</span>
+                </div>
+                <div>
+                    <span th:text="${role == 'ADMIN' ? 'Admin' : 'HR Manager'}"></span>
+                    <i class="fas fa-user-circle" style="font-size: 1.5em; margin-left: 10px;"></i>
+                </div>
+            </nav>
+
+            <div class="content">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h4 mb-0"><i class="fas fa-money-bill"></i> Payroll Reports</h2>
+                    <a class="btn btn-outline-primary btn-sm" th:href="${role == 'ADMIN'} ? @{/admin/dashboard} : @{/hr/dashboard}">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <p class="text-muted">Use this page to browse payroll records and manage payroll processing details.</p>
+                        <a class="btn btn-primary" th:href="${role == 'ADMIN'} ? @{/admin/payroll/process} : @{/hr/payroll/process}">
+                            <i class="fas fa-calculator"></i> Process Payroll
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <p>&copy; 2026 HR Management System. All rights reserved.</p>
+            </footer>
+        </div>
+    </div>
+    <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+    </script>
 </body>
 </html>
 

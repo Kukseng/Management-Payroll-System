@@ -98,8 +98,23 @@ public class EmployeeImpl implements EmployeeService {
             Employee employee = employeeRepository.findById(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
-                employeeMapper.updateEmployeeFromRequest(request, employee);
-                employeeRepository.save(employee);
+            employeeMapper.updateEmployeeFromRequest(request, employee);
+
+            if (request.departmentId() != null) {
+                Department department = departmentRepository.findById(request.departmentId()).orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found")
+                );
+                employee.setDepartment(department);
+            }
+
+            if (request.roleId() != null) {
+                Role role = roleRepository.findByRoleId(request.roleId()).orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found")
+                );
+                employee.setRole(role);
+            }
+
+            employeeRepository.save(employee);
 
         return employeeMapper.employeeToEmployeeResponse(employee) ;
     }

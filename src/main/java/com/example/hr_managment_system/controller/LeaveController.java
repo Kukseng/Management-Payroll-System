@@ -31,6 +31,12 @@ public class LeaveController {
         return leaveService.createLeaveRequest(request);
     }
 
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<LeaveResponse> getAll() {
+        return leaveService.getAllLeaveRequests();
+    }
+
     @GetMapping("/my")
     @ResponseStatus(HttpStatus.OK)
     public List<LeaveResponse> getMyLeaves(Authentication authentication) {

@@ -69,5 +69,18 @@ public class HRDashboardViewController {
         model.addAttribute("role", "MANAGER");
         return "performance/detail";
     }
+
+    // Payroll Management
+    @GetMapping("/payroll")
+    public String payrollPage(Model model) {
+        model.addAttribute("role", "MANAGER");
+        return "payroll/reports";
+    }
+
+    @GetMapping("/payroll/process")
+    public String processPayrollForm(Model model) {
+        model.addAttribute("role", "MANAGER");
+        return "payroll/process";
+    }
 }
 

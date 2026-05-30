@@ -6,205 +6,7 @@
     <title>HR Dashboard - HR Management System</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #27ae60;
-            --danger-color: #e74c3c;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fa;
-        }
-
-        .wrapper {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            height: 100vh;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            padding: 20px 0;
-            overflow-y: auto;
-            z-index: 1000;
-        }
-
-        .sidebar .logo {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            margin-bottom: 20px;
-        }
-
-        .sidebar .logo h3 {
-            margin: 0;
-            font-size: 1.3em;
-        }
-
-        .sidebar .nav-menu {
-            list-style: none;
-        }
-
-        .sidebar .nav-menu a {
-            display: block;
-            padding: 12px 20px;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            border-left: 3px solid transparent;
-        }
-
-        .sidebar .nav-menu a:hover {
-            background-color: rgba(255,255,255,0.1);
-            border-left-color: var(--secondary-color);
-        }
-
-        .sidebar .nav-menu a.active {
-            background-color: rgba(255,255,255,0.2);
-            border-left-color: #fff;
-        }
-
-        .sidebar .nav-menu .menu-label {
-            padding: 15px 20px 10px;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            opacity: 0.7;
-            margin-top: 10px;
-        }
-
-        .main-content {
-            flex: 1;
-            margin-left: 250px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .navbar-custom {
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .stat-card .stat-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: var(--secondary-color);
-        }
-
-        .stat-card .stat-label {
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .stat-card i {
-            font-size: 2em;
-            color: var(--secondary-color);
-            margin-bottom: 10px;
-        }
-
-        .card {
-            border: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            border-radius: 8px 8px 0 0;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .btn-primary {
-            background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
-        }
-
-        .btn-primary:hover {
-            background-color: #2980b9;
-            border-color: #2980b9;
-        }
-
-        .table thead th {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-        }
-
-        .table tbody tr:hover {
-            background-color: rgba(52, 152, 219, 0.05);
-        }
-
-        .badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-        }
-
-        .footer {
-            background: var(--primary-color);
-            color: white;
-            text-align: center;
-            padding: 15px;
-            margin-top: auto;
-        }
-
-        .status-badge-pending {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .status-badge-approved {
-            background-color: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .status-badge-rejected {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
 <body>
     <div class="wrapper">
@@ -218,6 +20,7 @@
                 <li class="menu-label">Management</li>
                 <li><a href="/hr/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
                 <li><a href="/hr/attendance"><i class="fas fa-clock"></i> Attendance Report</a></li>
+                <li><a href="/hr/payroll"><i class="fas fa-money-bill"></i> Payroll</a></li>
                 <li class="menu-label">Other</li>
                 <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -275,8 +78,32 @@
                     </div>
                 </div>
 
+                <!-- Charts Row -->
+                <div class="row mb-4">
+                    <div class="col-md-7">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="card-title mb-0 fw-bold"><i class="fas fa-chart-bar text-primary"></i> Attendance Status (Last 7 Days)</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="attendanceChart" style="max-height: 250px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="card-title mb-0 fw-bold"><i class="fas fa-chart-pie text-primary"></i> Leaves by Status</h5>
+                            </div>
+                            <div class="card-body d-flex align-items-center justify-content-center">
+                                <canvas id="leaveStatusChart" style="max-height: 220px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Pending Leave Requests -->
-                <div class="card">
+                <div class="card shadow-sm">
                     <div class="card-header">
                         <h5>Pending Leave Requests</h5>
                         <a href="/hr/leaves/pending" class="btn btn-sm btn-light">View All</a>
@@ -328,6 +155,7 @@
 
     <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
     <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
@@ -342,7 +170,6 @@
             fetch(`/api/v1/leave/${leaveId}/approve`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ remarks: remarks || '' })
@@ -364,7 +191,6 @@
             fetch(`/api/v1/leave/${leaveId}/reject`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ remarks: remarks })
@@ -378,20 +204,84 @@
         }
 
         // Load statistics
-        fetch('/api/v1/leave/pending', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        })
+        fetch('/api/v1/leave')
         .then(res => res.json())
         .then(data => {
-            document.getElementById('pendingCount').textContent = data.length || 0;
-            const approved = data.filter(l => l.status === 'APPROVED').length;
-            const rejected = data.filter(l => l.status === 'REJECTED').length;
-            document.getElementById('approvedCount').textContent = approved || 0;
-            document.getElementById('rejectedCount').textContent = rejected || 0;
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            const pending = data.filter(l => l.status === 'PENDING').length;
+            
+            const approved = data.filter(l => {
+                if (l.status !== 'APPROVED') return false;
+                const d = new Date(l.startDate);
+                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            }).length;
+            
+            const rejected = data.filter(l => {
+                if (l.status !== 'REJECTED') return false;
+                const d = new Date(l.startDate);
+                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            }).length;
+
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('approvedCount').textContent = approved;
+            document.getElementById('rejectedCount').textContent = rejected;
         })
         .catch(err => console.log('Error:', err));
+
+        // Load Charts
+        fetch('/api/v1/analytics/attendance')
+        .then(r => r.json())
+        .then(data => {
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+            
+            new Chart(document.getElementById('attendanceChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Employees Count',
+                        data: values,
+                        backgroundColor: ['#10b981', '#f59e0b', '#f43f5e']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        });
+
+        fetch('/api/v1/analytics/leaves')
+        .then(r => r.json())
+        .then(data => {
+            const statuses = data.byStatus || {};
+            const labels = Object.keys(statuses);
+            const values = Object.values(statuses);
+            
+            new Chart(document.getElementById('leaveStatusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: ['#f59e0b', '#10b981', '#f43f5e']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        });
     </script>
 </body>
 </html>
