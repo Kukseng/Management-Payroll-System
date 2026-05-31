@@ -126,6 +126,34 @@ public class PayrollServiceImpl implements PayrollService {
     }
 
 
+    @Override
+    public PayrollResponse approvePayroll(String uuid) {
+        Payroll payroll = payrollRepository.findByPayrollId(uuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payroll record not found."));
+        payroll.setStatus(StatusProgressUtil.APPROVED);
+        Payroll saved = payrollRepository.save(payroll);
+        return payrollMapper.PayrolltoPayrollResponse(saved);
+    }
+
+    @Override
+    public List<PayrollResponse> getAllPayrolls() {
+        return payrollRepository.findAll()
+                .stream()
+                .map(payrollMapper::PayrolltoPayrollResponse)
+                .toList();
+    }
+
+    @Override
+    public List<PayrollResponse> getPayrollByDepartmentId(String departmentId) {
+        if (departmentId == null || departmentId.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "departmentId is required.");
+        }
+        return payrollRepository.findByEmployee_Department_DepartmentId(departmentId)
+                .stream()
+                .map(payrollMapper::PayrolltoPayrollResponse)
+                .toList();
+    }
+
     private void validatePayrollRequest(PayrollRequest payrollRequest) {
         if (payrollRequest == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payroll request is required.");

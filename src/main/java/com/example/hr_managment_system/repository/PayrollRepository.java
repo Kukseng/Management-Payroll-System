@@ -19,4 +19,5 @@ public interface PayrollRepository extends JpaRepository<Payroll, String> {
 
     boolean existsByPayrollId(String uuid);
 
+    List<Payroll> findByEmployee_Department_DepartmentId(String departmentId);
 }

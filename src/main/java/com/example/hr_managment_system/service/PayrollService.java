@@ -12,4 +12,8 @@ public interface PayrollService {
 
     PayrollResponse getPayrollByUuid(String uuid);
 
+    PayrollResponse approvePayroll(String uuid);
+
+    List<PayrollResponse> getAllPayrolls();
+    List<PayrollResponse> getPayrollByDepartmentId(String departmentId);
 }

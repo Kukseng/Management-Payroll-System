@@ -8,6 +8,7 @@ public record EmployeeUpdate(
         String email,
         LocalDate dateOfBirth,
         String departmentId,
-        String roleId
+        String roleId,
+        Double baseSalary
 ) {
 }

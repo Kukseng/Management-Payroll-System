@@ -67,6 +67,21 @@ public class PayrollController {
 
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
+
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping
+    public List<PayrollResponse> getPayrolls(@RequestParam(required = false) String departmentId) {
+        if (departmentId != null && !departmentId.trim().isEmpty()) {
+            return payrollService.getPayrollByDepartmentId(departmentId);
+        }
+        return payrollService.getAllPayrolls();
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PatchMapping("/{uuid}/approve")
+    public PayrollResponse approvePayroll(@PathVariable String uuid) {
+        return payrollService.approvePayroll(uuid);
+    }
 }
 //String processPayroll(PayrollRequest payrollRequest);
 //    PayrollResponse getPayslipByEmployeeIdAndMonth(Integer employeeId, Integer month, Integer year);

@@ -82,19 +82,19 @@
                     <div class="col-md-8">
                         <div class="card shadow-sm border-0 h-100">
                             <div class="card-header bg-white">
-                                <h5 class="mb-0 text-primary"><i class="fas fa-search"></i> Employee Payroll History</h5>
+                                <h5 class="mb-0 text-primary"><i class="fas fa-search"></i> Department Payroll Filter</h5>
                             </div>
                             <div class="card-body">
                                 <div class="row g-3 align-items-end">
                                     <div class="col-sm-9">
-                                        <label class="form-label fw-semibold">Select Employee to Audit</label>
-                                        <select class="form-select" id="employeeSelect">
-                                            <option value="" disabled selected>Loading active employees...</option>
+                                        <label class="form-label fw-semibold">Select Department to Audit</label>
+                                        <select class="form-select" id="departmentSelect">
+                                            <option value="" disabled selected>Loading departments...</option>
                                         </select>
                                     </div>
                                     <div class="col-sm-3">
-                                        <button class="btn btn-primary w-100" id="auditBtn" onclick="loadEmployeePayroll()" disabled>
-                                            <i class="fas fa-search me-1"></i> Retrieve
+                                        <button class="btn btn-primary w-100" id="auditBtn" onclick="loadDepartmentPayroll()" disabled>
+                                            <i class="fas fa-filter me-1"></i> Filter
                                         </button>
                                     </div>
                                 </div>
@@ -107,13 +107,14 @@
                         <div class="card shadow-sm border-0">
                             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0 text-primary"><i class="fas fa-list"></i> Payroll History Log</h5>
-                                <span id="auditTargetName" class="badge bg-info">Select employee above</span>
+                                <span id="auditTargetName" class="badge bg-info">Select department above</span>
                             </div>
                             <div class="table-responsive">
                                 <table class="table mb-0">
                                     <thead>
                                         <tr>
                                             <th>Reference ID</th>
+                                            <th>Employee</th>
                                             <th>Gross Salary</th>
                                             <th>Overtime Pay</th>
                                             <th>Deductions</th>
@@ -125,8 +126,8 @@
                                     </thead>
                                     <tbody id="payrollRows">
                                         <tr>
-                                            <td colspan="8" class="text-center text-muted py-4">
-                                                Please select an employee and click "Retrieve" to fetch statements.
+                                            <td colspan="9" class="text-center text-muted py-4">
+                                                Please select a department and click "Filter" to fetch statements.
                                             </td>
                                         </tr>
                                     </tbody>
@@ -155,49 +156,54 @@
         const monthsName = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Load employee options
-            fetch('/api/v1/employee?isActive=true')
+            // Load department options
+            fetch('/api/v1/department')
             .then(res => res.json())
             .then(data => {
-                const select = document.getElementById('employeeSelect');
-                select.innerHTML = '<option value="" disabled selected>Choose employee to audit...</option>';
-                data.forEach(emp => {
+                const select = document.getElementById('departmentSelect');
+                select.innerHTML = '<option value="ALL">All Departments</option>';
+                data.forEach(dept => {
                     const opt = document.createElement('option');
-                    opt.value = emp.employeeId;
-                    opt.setAttribute('data-name', `${emp.firstName} ${emp.lastName}`);
-                    opt.textContent = `${emp.firstName} ${emp.lastName} (ID: ${emp.employeeId})`;
+                    opt.value = dept.departmentId;
+                    opt.setAttribute('data-name', dept.departmentName);
+                    const statusText = dept.isActive ? '' : ' (Inactive)';
+                    opt.textContent = `${dept.departmentName}${statusText} (ID: ${dept.departmentId})`;
                     select.appendChild(opt);
                 });
                 document.getElementById('auditBtn').disabled = false;
             })
             .catch(err => {
                 console.error(err);
-                const select = document.getElementById('employeeSelect');
-                select.innerHTML = '<option value="" disabled selected>Failed to load employees.</option>';
+                const select = document.getElementById('departmentSelect');
+                select.innerHTML = '<option value="" disabled selected>Failed to load departments.</option>';
             });
         });
 
-        async function loadEmployeePayroll() {
-            const select = document.getElementById('employeeSelect');
-            const employeeId = select.value;
-            if (!employeeId) return;
+        async function loadDepartmentPayroll() {
+            const select = document.getElementById('departmentSelect');
+            const departmentId = select.value;
+            if (!departmentId) return;
 
             const selectedOption = select.options[select.selectedIndex];
-            const fullName = selectedOption.getAttribute('data-name');
-            document.getElementById('auditTargetName').textContent = `Auditing: ${fullName}`;
+            const deptName = selectedOption.textContent;
+            document.getElementById('auditTargetName').textContent = `Auditing: ${deptName}`;
 
             const rows = document.getElementById('payrollRows');
             rows.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center text-muted py-4">
+                    <td colspan="9" class="text-center text-muted py-4">
                         <i class="fas fa-spinner fa-spin me-2"></i> Querying payslips from databases...
                     </td>
                 </tr>`;
 
             try {
-                const res = await fetch(`/api/v1/payroll/employee/${employeeId}`, { headers: { 'Accept': 'application/json' } });
+                let url = '/api/v1/payroll';
+                if (departmentId !== 'ALL') {
+                    url += `?departmentId=${encodeURIComponent(departmentId)}`;
+                }
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
                 if (!res.ok) {
-                    rows.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">No payroll records found for this employee.</td></tr>`;
+                    rows.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">No payroll records found for this selection.</td></tr>`;
                     return;
                 }
                 const data = await res.json();
@@ -209,30 +215,87 @@
                         const overtimeVal = p.overtimePay != null ? `$${p.overtimePay.toFixed(2)}` : '$0.00';
                         const deductionsVal = p.deductions != null ? `$${p.deductions.toFixed(2)}` : '$0.00';
                         const netVal = p.netPay != null ? `$${p.netPay.toFixed(2)}` : '$0.00';
-                        const statusColor = p.status === 'PAID' ? 'bg-success' : 'bg-warning';
+                        const statusColor = p.status === 'APPROVED' ? 'bg-success' : 'bg-warning';
+
+                        let actionsHtml = `
+                            <a href="/employee/payroll/${p.payrollId}" class="btn btn-sm btn-outline-primary py-1 px-2"><i class="fas fa-eye"></i> View</a>
+                            <a href="/api/v1/payroll/${p.payrollId}/download" class="btn btn-sm btn-outline-danger py-1 px-2"><i class="fas fa-file-pdf"></i> PDF</a>
+                        `;
+                        if (p.status === 'PENDING') {
+                            actionsHtml += `
+                                <button onclick="approvePayroll('${p.payrollId}')" class="btn btn-sm btn-success py-1 px-2"><i class="fas fa-check-circle"></i> Approve</button>
+                            `;
+                        }
 
                         return `<tr>
                             <td><span class="fw-semibold font-monospace">${p.payrollId.substring(0, 8)}...</span></td>
+                            <td><strong>${p.employeeFirstName || ''} ${p.employeeLastName || ''}</strong> <small class="text-muted">(${p.employeeId || ''})</small></td>
                             <td>${grossVal}</td>
                             <td class="text-success">+ ${overtimeVal}</td>
                             <td class="text-danger">- ${deductionsVal}</td>
                             <td class="fw-bold text-primary">${netVal}</td>
                             <td>${monthStr} ${p.year}</td>
-                            <td><span class="badge ${statusColor}">${p.status || 'UNPAID'}</span></td>
+                            <td><span class="badge ${statusColor}">${p.status || 'PENDING'}</span></td>
                             <td class="text-end">
                                 <div class="btn-group gap-1">
-                                    <a href="/employee/payroll/${p.payrollId}" class="btn btn-sm btn-outline-primary py-1 px-2"><i class="fas fa-eye"></i> View</a>
-                                    <a href="/api/v1/payroll/${p.payrollId}/download" class="btn btn-sm btn-outline-danger py-1 px-2"><i class="fas fa-file-pdf"></i> PDF</a>
+                                    ${actionsHtml}
                                 </div>
                             </td>
                         </tr>`;
                     }).join('');
                 } else {
-                    rows.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">No payroll records found for this employee.</td></tr>`;
+                    rows.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">No payroll records found for this selection.</td></tr>`;
                 }
             } catch (err) {
                 console.error(err);
-                rows.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Error loading statements.</td></tr>`;
+                rows.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">Error loading statements.</td></tr>`;
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const existingAlert = document.getElementById('payrollAlertBanner');
+            if (existingAlert) existingAlert.remove();
+
+            const alertDiv = document.createElement('div');
+            alertDiv.id = 'payrollAlertBanner';
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show border-0 shadow-sm mb-4`;
+            alertDiv.role = 'alert';
+            alertDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                    <div>${message}</div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            const container = document.querySelector('.content');
+            container.insertBefore(alertDiv, container.firstChild);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            setTimeout(() => {
+                if (document.getElementById('payrollAlertBanner')) {
+                    alertDiv.classList.remove('show');
+                    setTimeout(() => alertDiv.remove(), 150);
+                }
+            }, 6000);
+        }
+
+        async function approvePayroll(uuid) {
+            if (!confirm('Are you sure you want to authorize and process the payment for this payslip record?')) return;
+            try {
+                const res = await fetch(`/api/v1/payroll/${uuid}/approve`, {
+                    method: 'PATCH'
+                });
+                if (res.ok) {
+                    showNotification('Payroll statement has been authorized and payment has been processed successfully!', 'success');
+                    loadDepartmentPayroll();
+                } else {
+                    const err = await res.text();
+                    showNotification('Error authorizing payroll: ' + (err || 'Server error'), 'danger');
+                }
+            } catch (err) {
+                console.error(err);
+                showNotification('Network error authorizing payroll.', 'danger');
             }
         }
     </script>
