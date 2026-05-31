@@ -51,14 +51,16 @@ public class LeaveController {
 
     @PatchMapping("/{id}/approve")
     @ResponseStatus(HttpStatus.OK)
-    public LeaveResponse approve(@PathVariable String id, Authentication authentication) {
-        return leaveService.approveLeave(id, authentication.getName());
+    public LeaveResponse approve(@PathVariable String id, @RequestBody(required = false) java.util.Map<String, String> payload, Authentication authentication) {
+        String remarks = payload != null ? payload.get("remarks") : null;
+        return leaveService.approveLeave(id, authentication.getName(), remarks);
     }
 
     @PatchMapping("/{id}/reject")
     @ResponseStatus(HttpStatus.OK)
-    public LeaveResponse reject(@PathVariable String id, Authentication authentication) {
-        return leaveService.rejectLeave(id, authentication.getName());
+    public LeaveResponse reject(@PathVariable String id, @RequestBody(required = false) java.util.Map<String, String> payload, Authentication authentication) {
+        String remarks = payload != null ? payload.get("remarks") : null;
+        return leaveService.rejectLeave(id, authentication.getName(), remarks);
     }
 
     @GetMapping("/balance/{employeeId}")

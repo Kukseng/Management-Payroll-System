@@ -8,6 +8,7 @@ public record LeaveCreateRequest(
         String employeeId,
         LocalDate startDate,
         LocalDate endDate,
-        TypeUtil type
+        TypeUtil type,
+        String reason
 ) {
 }

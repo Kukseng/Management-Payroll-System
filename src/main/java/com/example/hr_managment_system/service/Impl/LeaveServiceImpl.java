@@ -39,6 +39,9 @@ public class LeaveServiceImpl implements LeaveService {
         if (request.endDate().isBefore(request.startDate())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endDate cannot be before startDate");
         }
+        if (request.reason() == null || request.reason().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Leave reason/cause is required");
+        }
 
         Employee employee = employeeRepository.findByEmployeeId(request.employeeId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
@@ -49,6 +52,7 @@ public class LeaveServiceImpl implements LeaveService {
         leave.setEndDate(request.endDate());
         leave.setType(request.type());
         leave.setStatus(StatusProgressUtil.PENDING);
+        leave.setReason(request.reason());
 
         LeaveRequest saved = leaveRequestRepository.save(leave);
 
@@ -95,13 +99,13 @@ public class LeaveServiceImpl implements LeaveService {
     }
 
     @Override
-    public LeaveResponse approveLeave(String leaveId, String approverPrincipal) {
-        return updateLeaveStatus(leaveId, approverPrincipal, StatusProgressUtil.APPROVED);
+    public LeaveResponse approveLeave(String leaveId, String approverPrincipal, String remarks) {
+        return updateLeaveStatus(leaveId, approverPrincipal, StatusProgressUtil.APPROVED, remarks);
     }
 
     @Override
-    public LeaveResponse rejectLeave(String leaveId, String approverPrincipal) {
-        return updateLeaveStatus(leaveId, approverPrincipal, StatusProgressUtil.REJECTED);
+    public LeaveResponse rejectLeave(String leaveId, String approverPrincipal, String remarks) {
+        return updateLeaveStatus(leaveId, approverPrincipal, StatusProgressUtil.REJECTED, remarks);
     }
 
     @Override
@@ -129,7 +133,7 @@ public class LeaveServiceImpl implements LeaveService {
         );
     }
 
-    private LeaveResponse updateLeaveStatus(String leaveId, String approverPrincipal, StatusProgressUtil status) {
+    private LeaveResponse updateLeaveStatus(String leaveId, String approverPrincipal, StatusProgressUtil status, String remarks) {
         LeaveRequest leave = leaveRequestRepository.findById(leaveId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Leave request not found"));
 
@@ -142,11 +146,13 @@ public class LeaveServiceImpl implements LeaveService {
         try {
             Employee employee = saved.getEmployee();
             if (employee != null) {
+                String finalRemarks = (remarks != null && !remarks.trim().isEmpty()) ? remarks :
+                        ("Updated by " + approver.getFirstName() + " " + approver.getLastName());
                 emailService.sendLeaveStatusEmail(
                         employee.getEmail(),
                         employee.getFirstName() + " " + employee.getLastName(),
                         status.toString(),
-                        "Updated by " + approver.getFirstName() + " " + approver.getLastName()
+                        finalRemarks
                 );
             }
         } catch (Exception e) {
@@ -178,7 +184,8 @@ public class LeaveServiceImpl implements LeaveService {
                 leave.getEndDate(),
                 leave.getType(),
                 leave.getStatus(),
-                leave.getApprovedBy() == null ? null : leave.getApprovedBy().getEmployeeId()
+                leave.getApprovedBy() == null ? null : leave.getApprovedBy().getEmployeeId(),
+                leave.getReason()
         );
     }
 }

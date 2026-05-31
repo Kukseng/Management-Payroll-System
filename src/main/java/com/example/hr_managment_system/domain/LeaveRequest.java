@@ -39,4 +39,6 @@ public class LeaveRequest {
     @JoinColumn(name = "approved_by")
     private Employee approvedBy;
 
+    @Column(name = "reason", length = 1000)
+    private String reason;
 }

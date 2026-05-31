@@ -70,12 +70,13 @@
                                         <th>Type</th>
                                         <th>From</th>
                                         <th>To</th>
+                                        <th>Reason/Cause</th>
                                         <th class="text-end">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="rows">
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted">Loading pending requests...</td>
+                                        <td colspan="7" class="text-center text-muted">Loading pending requests...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -130,8 +131,10 @@
                 if (actionType === 'reject') {
                     if (val === '') {
                         submitBtn.disabled = true;
+                        e.target.classList.add('is-invalid');
                     } else {
                         submitBtn.disabled = false;
+                        e.target.classList.remove('is-invalid');
                     }
                 }
             });
@@ -159,6 +162,7 @@
                         <td><span class="badge bg-light text-dark border">${l.type||''}</span></td>
                         <td>${l.startDate||''}</td>
                         <td>${l.endDate||''}</td>
+                        <td><span class="text-muted small">${l.reason||'N/A'}</span></td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-success me-1" onclick="approve('${l.leaveRequestId}')">
                                 <i class="fas fa-check"></i> Approve
@@ -168,7 +172,7 @@
                             </button>
                         </td>
                     </tr>
-                `).join('') || '<tr><td colspan="6" class="text-center text-muted">No pending leaves found</td></tr>';
+                `).join('') || '<tr><td colspan="7" class="text-center text-muted">No pending leaves found</td></tr>';
             } catch (err) {
                 console.error(err);
                 document.getElementById('rows').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Failed to load pending leaves.</td></tr>';

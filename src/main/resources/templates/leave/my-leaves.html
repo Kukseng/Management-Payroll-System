@@ -63,12 +63,13 @@
                                     <th>Leave Type</th>
                                     <th>From Date</th>
                                     <th>To Date</th>
+                                    <th>Reason/Cause</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody id="rows">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
+                                    <td colspan="6" class="text-center text-muted py-4">
                                         <i class="fas fa-spinner fa-spin me-2"></i> Loading leave records...
                                     </td>
                                 </tr>
@@ -108,16 +109,17 @@
                             <td><span class="text-primary fw-semibold"><i class="fas fa-plane-departure me-1"></i> ${l.type || 'N/A'}</span></td>
                             <td>${l.startDate || 'N/A'}</td>
                             <td>${l.endDate || 'N/A'}</td>
+                            <td><span class="text-muted small">${l.reason || 'N/A'}</span></td>
                             <td><span class="badge ${statusColor}">${l.status || 'Pending'}</span></td>
                         </tr>`;
                     }).join('');
                 } else {
-                    rows.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No leave requests found</td></tr>';
+                    rows.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No leave requests found</td></tr>';
                 }
             })
             .catch(err => {
                 console.error(err);
-                document.getElementById('rows').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Failed to load leave records</td></tr>';
+                document.getElementById('rows').innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Failed to load leave records</td></tr>';
             });
         });
     </script>

@@ -13,9 +13,9 @@ public interface LeaveService {
 
     List<LeaveResponse> getPendingLeaveRequests();
 
-    LeaveResponse approveLeave(String leaveId, String approverPrincipal);
+    LeaveResponse approveLeave(String leaveId, String approverPrincipal, String remarks);
 
-    LeaveResponse rejectLeave(String leaveId, String approverPrincipal);
+    LeaveResponse rejectLeave(String leaveId, String approverPrincipal, String remarks);
 
     LeaveBalanceResponse getLeaveBalance(String employeeId);
 

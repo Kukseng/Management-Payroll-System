@@ -13,6 +13,7 @@ public record LeaveResponse(
         LocalDate endDate,
         TypeUtil type,
         StatusProgressUtil status,
-        String approvedByEmployeeId
+        String approvedByEmployeeId,
+        String reason
 ) {
 }
