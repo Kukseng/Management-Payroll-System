@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Management - HR Management System</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
+    <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h3><i class="fas fa-building"></i> HR System</h3>
+            </div>
+            <!-- Admin Menu -->
+            <ul class="nav-menu" th:if="${role == 'ADMIN'}">
+                <li><a href="/admin/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">Management</li>
+                <li><a href="/admin/employees"><i class="fas fa-users"></i> Employees</a></li>
+                <li><a href="/admin/departments"><i class="fas fa-building"></i> Departments</a></li>
+                <li><a href="/admin/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
+                <li><a href="/admin/attendance"><i class="fas fa-clock"></i> Attendance</a></li>
+                <li><a href="/admin/payroll"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li><a href="/admin/shifts" class="active"><i class="fas fa-calendar-alt"></i> Shifts</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+            <!-- Manager Menu -->
+            <ul class="nav-menu" th:if="${role == 'MANAGER'}">
+                <li><a href="/hr/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">Management</li>
+                <li><a href="/hr/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
+                <li><a href="/hr/attendance"><i class="fas fa-clock"></i> Attendance Report</a></li>
+                <li><a href="/hr/payroll"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li><a href="/hr/shifts" class="active"><i class="fas fa-calendar-alt"></i> Shifts</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <nav class="navbar-custom">
+                <div>
+                    <span>Shift Management Portal</span>
+                </div>
+                <div>
+                    <span th:text="${role == 'ADMIN' ? 'Admin' : 'HR Manager'}"></span>
+                    <i class="fas fa-user-circle" style="font-size: 1.5em; margin-left: 10px;"></i>
+                </div>
+            </nav>
+
+            <div class="content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="h4 mb-1"><i class="fas fa-calendar-day text-primary"></i> Working Shifts</h2>
+                        <p class="text-muted small mb-0">Define organizational shift timing plans and assign working hours to employees.</p>
+                    </div>
+                    <a class="btn btn-secondary btn-sm" th:href="${role == 'ADMIN'} ? @{/admin/dashboard} : @{/hr/dashboard}">
+                        <i class="fas fa-arrow-left"></i> Dashboard
+                    </a>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Create Shift Form: ONLY visible to ADMIN -->
+                    <div class="col-md-5" th:if="${role == 'ADMIN'}">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0 text-primary"><i class="fas fa-plus-circle"></i> Create Shift</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="createMsg"></div>
+                                <form id="createShiftForm" class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Shift Name</label>
+                                        <input class="form-control" id="shiftName" placeholder="Morning Shift, Night Shift..." required>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">Start Time</label>
+                                        <input class="form-control" type="time" id="startTime" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">End Time</label>
+                                        <input class="form-control" type="time" id="endTime" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Grace Period (Minutes)</label>
+                                        <input class="form-control" type="number" id="gracePeriod" min="0" value="15" required>
+                                        <div class="form-text small">Allowed time before marked late.</div>
+                                    </div>
+                                    <div class="col-12 mt-4">
+                                        <button class="btn btn-primary w-100" type="submit">
+                                            <i class="fas fa-save me-1"></i> Save Shift Plan
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assign Shift Card: visible to both ADMIN and MANAGER -->
+                    <div th:class="${role == 'ADMIN'} ? 'col-md-7' : 'col-md-12'">
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0 text-primary"><i class="fas fa-user-tag"></i> Grant Shift to Employee</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="assignMsg"></div>
+                                <form id="assignShiftForm" class="row g-3 align-items-end">
+                                    <div class="col-md-5">
+                                        <label class="form-label fw-semibold">Select Employee</label>
+                                        <select class="form-select" id="employeeSelect" required>
+                                            <option value="" disabled selected>Loading active employees...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold">Target Shift</label>
+                                        <select class="form-select" id="shiftSelect" required>
+                                            <option value="" disabled selected>Loading shift configurations...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button class="btn btn-success w-100" type="submit">
+                                            <i class="fas fa-check-circle me-1"></i> Assign Shift
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Shifts List -->
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0 text-primary"><i class="fas fa-list-ul"></i> Shift Schedule Registry</h5>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Shift Name</th>
+                                            <th>Hours</th>
+                                            <th>Grace Period</th>
+                                            <th>Reference ID</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="shiftRows">
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">
+                                                <i class="fas fa-spinner fa-spin me-2"></i> Querying shifts...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <p>&copy; 2026 HR Management System. All rights reserved.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        // Global list to handle UI populate
+        let shiftsList = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadShifts();
+            loadEmployees();
+
+            // Setup Form submissions if ADMIN
+            const createForm = document.getElementById('createShiftForm');
+            if (createForm) {
+                createForm.addEventListener('submit', handleCreateShift);
+            }
+
+            document.getElementById('assignShiftForm').addEventListener('submit', handleAssignShift);
+        });
+
+        async function loadShifts() {
+            const rows = document.getElementById('shiftRows');
+            const select = document.getElementById('shiftSelect');
+            try {
+                const res = await fetch('/api/v1/shifts', { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error();
+                shiftsList = await res.json();
+
+                // Populate Table
+                if (shiftsList && shiftsList.length > 0) {
+                    rows.innerHTML = shiftsList.map(s => {
+                        const grace = s.gracePeriodMinutes ? `${s.gracePeriodMinutes} mins` : 'No grace period';
+                        return `<tr>
+                            <td><strong class="text-primary">${s.name}</strong></td>
+                            <td><i class="far fa-clock text-secondary me-1"></i> ${s.startTime.substring(0,5)} - ${s.endTime.substring(0,5)}</td>
+                            <td><span class="badge bg-light text-dark border">${grace}</span></td>
+                            <td><small class="font-monospace text-muted">${s.shiftId.substring(0,8)}...</small></td>
+                        </tr>`;
+                    }).join('');
+
+                    // Populate Select
+                    select.innerHTML = '<option value="" disabled selected>Choose shift plan...</option>';
+                    shiftsList.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.shiftId;
+                        opt.textContent = `${s.name} (${s.startTime.substring(0,5)} - ${s.endTime.substring(0,5)})`;
+                        select.appendChild(opt);
+                    });
+                } else {
+                    rows.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No shift configurations defined.</td></tr>';
+                    select.innerHTML = '<option value="" disabled selected>No shifts defined</option>';
+                }
+            } catch (err) {
+                console.error(err);
+                rows.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4">Failed to load shifts.</td></tr>';
+            }
+        }
+
+        async function loadEmployees() {
+            const select = document.getElementById('employeeSelect');
+            try {
+                const res = await fetch('/api/v1/employee?isActive=true', { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error();
+                const employees = await res.json();
+
+                select.innerHTML = '<option value="" disabled selected>Choose employee...</option>';
+                employees.forEach(emp => {
+                    const opt = document.createElement('option');
+                    opt.value = emp.employeeId;
+                    opt.textContent = `${emp.firstName} ${emp.lastName} (ID: ${emp.employeeId})`;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.error(err);
+                select.innerHTML = '<option value="" disabled selected>Failed to load employees.</option>';
+            }
+        }
+
+        async function handleCreateShift(e) {
+            e.preventDefault();
+            const msg = document.getElementById('createMsg');
+            const name = document.getElementById('shiftName').value.trim();
+            const start = document.getElementById('startTime').value;
+            const end = document.getElementById('endTime').value;
+            const grace = parseInt(document.getElementById('gracePeriod').value);
+
+            try {
+                // Formatting time as "HH:mm:ss" for LocalTime mapping
+                const res = await fetch('/api/v1/shifts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        startTime: start + ":00",
+                        endTime: end + ":00",
+                        gracePeriodMinutes: grace
+                    })
+                });
+
+                if (res.ok) {
+                    msg.innerHTML = '<div class="alert alert-success py-2 px-3 small"><i class="fas fa-check-circle me-1"></i> Shift plan saved!</div>';
+                    document.getElementById('createShiftForm').reset();
+                    loadShifts();
+                } else {
+                    const err = await res.text();
+                    msg.innerHTML = `<div class="alert alert-danger py-2 px-3 small"><i class="fas fa-exclamation-circle me-1"></i> ${err || 'Failed to save shift'}</div>`;
+                }
+            } catch (error) {
+                console.error(error);
+                msg.innerHTML = '<div class="alert alert-danger py-2 px-3 small"><i class="fas fa-exclamation-circle me-1"></i> Network error saving shift.</div>';
+            }
+        }
+
+        async function handleAssignShift(e) {
+            e.preventDefault();
+            const msg = document.getElementById('assignMsg');
+            const employeeId = document.getElementById('employeeSelect').value;
+            const shiftId = document.getElementById('shiftSelect').value;
+
+            try {
+                const res = await fetch(`/api/v1/shifts/assign?employeeId=${encodeURIComponent(employeeId)}&shiftId=${encodeURIComponent(shiftId)}`, {
+                    method: 'POST'
+                });
+
+                if (res.ok) {
+                    msg.innerHTML = '<div class="alert alert-success py-2 px-3 small"><i class="fas fa-check-circle me-1"></i> Shift assigned successfully!</div>';
+                    document.getElementById('assignShiftForm').reset();
+                } else {
+                    const err = await res.text();
+                    msg.innerHTML = `<div class="alert alert-danger py-2 px-3 small"><i class="fas fa-exclamation-circle me-1"></i> ${err || 'Failed to assign shift'}</div>`;
+                }
+            } catch (error) {
+                console.error(error);
+                msg.innerHTML = '<div class="alert alert-danger py-2 px-3 small"><i class="fas fa-exclamation-circle me-1"></i> Network error assigning shift.</div>';
+            }
+        }
+    </script>
+</body>
+</html>

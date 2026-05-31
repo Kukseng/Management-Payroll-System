@@ -4,6 +4,7 @@ public record DepartmentResponse(
         String departmentId,
         String departmentName,
         String managerId,
+        String managerName,
         String qrCode,
         Double officeLatitude,
         Double officeLongitude,

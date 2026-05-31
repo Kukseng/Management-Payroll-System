@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Departments - HR Management System</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
+    <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h3><i class="fas fa-building"></i> HR System</h3>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/admin/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">Management</li>
+                <li><a href="/admin/employees"><i class="fas fa-users"></i> Employees</a></li>
+                <li><a href="/admin/departments" class="active"><i class="fas fa-building"></i> Departments</a></li>
+                <li><a href="/admin/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
+                <li><a href="/admin/attendance"><i class="fas fa-clock"></i> Attendance</a></li>
+                <li><a href="/admin/payroll"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li><a href="/admin/shifts"><i class="fas fa-calendar-alt"></i> Shifts</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <nav class="navbar-custom">
+                <span>Department Management</span>
+                <span><i class="fas fa-user-circle"></i></span>
+            </nav>
+
+            <div class="content">
+                <h2><i class="fas fa-building"></i> Manage Departments</h2>
+                <p class="text-muted">Create departments, assign managers, and configure office geofences</p>
+
+                <div id="msg"></div>
+
+                <div class="row g-4">
+                    <!-- Create Department Form -->
+                    <div class="col-lg-5">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="card-title mb-0 fw-bold"><i class="fas fa-plus-circle text-primary"></i> Create Department</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="deptForm" class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Department Name</label>
+                                        <input class="form-control" id="departmentName" required placeholder="e.g. IT, HR, Sales">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Assign Manager</label>
+                                        <select class="form-select" id="managerId">
+                                            <option value="">No Manager Assigned...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">QR Code Value</label>
+                                        <input class="form-control" id="qrCode" placeholder="e.g. QR-IT-DEFAULT">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">Office Latitude</label>
+                                        <input class="form-control" type="number" step="any" id="officeLatitude" required placeholder="e.g. 23.8103">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">Office Longitude</label>
+                                        <input class="form-control" type="number" step="any" id="officeLongitude" required placeholder="e.g. 90.4125">
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex gap-2 align-items-center">
+                                            <button class="btn btn-outline-info btn-sm" type="button" onclick="detectAdminLocation()">
+                                                <i class="fas fa-map-marker-alt"></i> Detect My Location
+                                            </button>
+                                        </div>
+                                        <div id="locationStatus" class="small mt-1"></div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Geofence Radius (meters)</label>
+                                        <input class="form-control" type="number" step="any" id="geofenceRadius" value="150" required placeholder="e.g. 150">
+                                    </div>
+                                    <div class="col-12">
+                                        <button class="btn btn-primary w-100" type="submit">
+                                            <i class="fas fa-save"></i> Save Department
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Department List -->
+                    <div class="col-lg-7">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="card-title mb-0 fw-bold"><i class="fas fa-list text-primary"></i> Active Departments</h5>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>ID</th>
+                                            <th>Manager ID</th>
+                                            <th>QR Code</th>
+                                            <th>Coordinates</th>
+                                            <th>Radius</th>
+                                            <th class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="deptRows">
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted">Loading departments...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let confirmCallback = null;
+        let bootstrapConfirmModal = null;
+
+        function showConfirmModal(message, callback) {
+            document.getElementById('confirmModalBody').textContent = message;
+            confirmCallback = callback;
+            if (!bootstrapConfirmModal) {
+                bootstrapConfirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            }
+            bootstrapConfirmModal.show();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDepartments();
+            loadEmployeesForManagers();
+            
+            document.getElementById('confirmModalBtn').addEventListener('click', () => {
+                if (confirmCallback) {
+                    confirmCallback();
+                }
+                if (bootstrapConfirmModal) {
+                    bootstrapConfirmModal.hide();
+                }
+            });
+        });
+
+        async function loadDepartments() {
+            try {
+                const res = await fetch('/api/v1/department', {
+                    headers: {'Accept': 'application/json'}
+                });
+                if (res.ok) {
+                    const depts = await res.json();
+                    const tbody = document.getElementById('deptRows');
+                    if (depts.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No departments found.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = depts.map(d => `
+                        <tr class="${!d.isActive ? 'table-danger text-muted' : ''}">
+                            <td><strong>${d.departmentName}</strong></td>
+                            <td><span class="badge bg-light text-dark text-wrap text-break">${d.departmentId}</span></td>
+                            <td>${d.managerName || d.managerId || '<span class="text-muted">None</span>'}</td>
+                            <td><code>${d.qrCode || ''}</code></td>
+                            <td>${d.officeLatitude != null ? d.officeLatitude.toFixed(4) : '-'}, ${d.officeLongitude != null ? d.officeLongitude.toFixed(4) : '-'}</td>
+                            <td>${d.geofenceRadiusMeters != null ? d.geofenceRadiusMeters + ' m' : '-'}</td>
+                            <td class="text-end">
+                                ${d.isActive ? `
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDept('${d.departmentId}')">
+                                        <i class="fas fa-ban"></i> Deactivate
+                                    </button>
+                                ` : `
+                                    <button class="btn btn-sm btn-outline-success" onclick="enableDept('${d.departmentId}')">
+                                        <i class="fas fa-check-circle"></i> Enable
+                                    </button>
+                                `}
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Error loading departments:', err);
+            }
+        }
+
+        async function loadEmployeesForManagers() {
+            try {
+                const res = await fetch('/api/v1/employee?isActive=true', {
+                    headers: {'Accept': 'application/json'}
+                });
+                if (res.ok) {
+                    const emps = await res.json();
+                    const managerSelect = document.getElementById('managerId');
+                    emps.forEach(emp => {
+                        const opt = document.createElement('option');
+                        opt.value = emp.employeeId;
+                        opt.textContent = `${emp.firstName} ${emp.lastName} (${emp.position || 'Employee'})`;
+                        managerSelect.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                console.error('Error fetching employees for managers:', err);
+            }
+        }
+
+        function detectAdminLocation() {
+            const statusEl = document.getElementById('locationStatus');
+            if (statusEl) {
+                statusEl.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin"></i> Querying browser Geolocation API...</span>';
+            }
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    document.getElementById('officeLatitude').value = lat;
+                    document.getElementById('officeLongitude').value = lon;
+                    if (statusEl) {
+                        statusEl.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> Admin location detected and set successfully!</span>';
+                    }
+                }, (err) => {
+                    alert("Error getting location: " + err.message);
+                    if (statusEl) {
+                        statusEl.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Location detection failed: ${err.message}</span>`;
+                    }
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+                if (statusEl) {
+                    statusEl.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle"></i> Geolocation is not supported by this browser.</span>';
+                }
+            }
+        }
+
+        document.getElementById('deptForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('msg');
+            msg.innerHTML = '';
+
+            const managerIdVal = document.getElementById('managerId').value;
+            const payload = {
+                DepartmentName: document.getElementById('departmentName').value,
+                managerId: managerIdVal ? { employeeId: managerIdVal } : null,
+                qrCode: document.getElementById('qrCode').value || 'QR-' + document.getElementById('departmentName').value.toUpperCase(),
+                officeLatitude: parseFloat(document.getElementById('officeLatitude').value) || 0.0,
+                officeLongitude: parseFloat(document.getElementById('officeLongitude').value) || 0.0,
+                geofenceRadiusMeters: parseFloat(document.getElementById('geofenceRadius').value) || 150.0
+            };
+
+            try {
+                const res = await fetch('/api/v1/department', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    msg.innerHTML = '<div class="alert alert-success">Department created successfully!</div>';
+                    document.getElementById('deptForm').reset();
+                    document.getElementById('locationStatus').innerHTML = '';
+                    loadDepartments();
+                } else {
+                    const errText = await res.text();
+                    msg.innerHTML = `<div class="alert alert-danger">Error: ${errText || 'Failed to create department'}</div>`;
+                }
+            } catch (err) {
+                msg.innerHTML = `<div class="alert alert-danger">Network error: ${err.message}</div>`;
+            }
+        });
+
+        function deleteDept(id) {
+            showConfirmModal("Are you sure you want to deactivate this department?", async () => {
+                try {
+                    const res = await fetch(`/api/v1/department/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (res.ok) {
+                        loadDepartments();
+                    } else {
+                        alert("Failed to deactivate department.");
+                    }
+                } catch (err) {
+                    alert("Error deactivating department: " + err.message);
+                }
+            });
+        }
+
+        function enableDept(id) {
+            showConfirmModal("Are you sure you want to reactivate this department?", async () => {
+                try {
+                    const res = await fetch(`/api/v1/department/${id}/enable`, {
+                        method: 'POST'
+                    });
+                    if (res.ok) {
+                        loadDepartments();
+                    } else {
+                        const text = await res.text();
+                        alert("Failed to reactivate department: " + (text || res.statusText));
+                    }
+                } catch (err) {
+                    alert("Error reactivating department: " + err.message);
+                }
+            });
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+    </script>
+
+    <!-- Reusable Confirmation Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 bg-light">
+                    <h5 class="modal-title fw-bold" id="confirmModalLabel"><i class="fas fa-exclamation-triangle text-warning me-2"></i> Confirmation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <p class="mb-0 fs-5 text-dark" id="confirmModalBody">Are you sure you want to perform this action?</p>
+                </div>
+                <div class="modal-footer border-0 bg-light justify-content-center">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary px-4" id="confirmModalBtn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

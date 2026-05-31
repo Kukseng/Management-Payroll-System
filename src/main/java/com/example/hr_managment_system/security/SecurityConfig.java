@@ -88,7 +88,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/employee/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/employee/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/employee/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/department/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/department/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/department/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/department/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/department/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/role/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/v1/payroll/process").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/payroll/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
@@ -99,6 +102,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/attendance/hr").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/attendance/admin").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/attendance/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/shifts/assign").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/shifts").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/shifts").hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated())
                 // Enable form login for Thymeleaf UI, redirect users by role
                 .formLogin(form -> form

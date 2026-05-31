@@ -1,66 +1,151 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Payroll Detail</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll Detail - HR Management System</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
     <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
-<body class="bg-light"><div class="container py-5" style="max-width: 900px;">
-    <div class="card shadow-sm"><div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">Payroll Detail</h1><a class="btn btn-outline-primary btn-sm" href="javascript:history.back()">Back</a></div>
-        <p class="text-muted">Detailed payroll breakdown and statement generation.</p>
-        <div class="row g-3" id="inputContainer">
-            <div class="col-md-6"><label class="form-label fw-semibold">Payroll Reference ID</label><input class="form-control" id="payrollId" placeholder="payroll-id"></div>
-            <div class="col-12"><button class="btn btn-primary" onclick="loadPayroll()">Load Detail</button></div>
-        </div>
-        <div id="result" class="mt-3"></div>
-    </div></div>
-</div>
-<script>
-async function loadPayroll(){
-  const res = await fetch(`/api/v1/payroll/${document.getElementById('payrollId').value}`, { headers:{'Accept': 'application/json'}});
-  const result = document.getElementById('result');
-  if (!res.ok) { result.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> Payslip details not found.</div>`; return; }
-  const p = await res.json();
-  result.innerHTML = `
-    <div class="card mt-3 shadow-sm border">
-      <div class="card-body">
-        <h5 class="card-title fw-bold text-primary mb-3"><i class="fas fa-file-invoice-dollar"></i> Payslip Details</h5>
-        <div class="row">
-          <div class="col-md-6">
-            <p class="mb-1"><strong>Employee:</strong> ${p.employeeFirstName||''} ${p.employeeLastName||''}</p>
-            <p class="mb-1"><strong>Employee ID:</strong> ${p.employeeId||''}</p>
-            <p class="mb-1"><strong>Period:</strong> ${p.month||''}/${p.year||''}</p>
-          </div>
-          <div class="col-md-6 text-md-end">
-            <p class="mb-1"><strong>Gross Salary:</strong> $${p.grossSalary != null ? p.grossSalary.toFixed(2) : '0.00'}</p>
-            <p class="mb-1"><strong>Deductions:</strong> $${p.deductions != null ? p.deductions.toFixed(2) : '0.00'}</p>
-            <p class="mb-1"><strong>Overtime Worked:</strong> ${p.overtimeHours != null ? p.overtimeHours.toFixed(2) : '0.00'} hrs</p>
-            <p class="mb-1"><strong>Overtime Pay:</strong> $${p.overtimePay != null ? p.overtimePay.toFixed(2) : '0.00'}</p>
-            <h4 class="text-primary mt-2"><strong>Net Pay:</strong> $${p.netPay != null ? p.netPay.toFixed(2) : '0.00'}</h4>
-          </div>
-        </div>
-        <hr class="my-3">
-        <div class="d-flex justify-content-between align-items-center">
-          <span class="badge ${p.status === 'PAID' ? 'bg-success' : 'bg-warning'}">${p.status||''}</span>
-          <a href="/api/v1/payroll/${p.payrollId}/download" class="btn btn-danger">
-            <i class="fas fa-file-pdf"></i> Download PDF Payslip
-          </a>
-        </div>
-      </div>
-    </div>`;
-}
+<body class="bg-light">
+    <div class="container py-5" style="max-width: 800px;">
+        <div class="card shadow border-0">
+            <div class="card-body p-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="h3 fw-bold text-primary mb-1"><i class="fas fa-file-invoice-dollar me-2"></i>Payslip Statement</h1>
+                        <p class="text-muted small mb-0" id="statementPeriod">Loading payroll period...</p>
+                    </div>
+                    <a class="btn btn-secondary btn-sm" href="javascript:history.back()">
+                        <i class="fas fa-arrow-left me-1"></i> Back
+                    </a>
+                </div>
 
-// Auto-load if UUID is in path
-document.addEventListener('DOMContentLoaded', () => {
-  const parts = window.location.pathname.split('/');
-  const uuid = parts[parts.length - 1];
-  if (uuid && uuid !== 'detail' && uuid.length > 10) {
-    document.getElementById('payrollId').value = uuid;
-    document.getElementById('inputContainer').style.display = 'none'; // hide manual input
-    loadPayroll();
-  }
-});
-</script>
+                <div id="inputContainer" class="mb-4 p-3 bg-light rounded border">
+                    <label class="form-label fw-semibold">Enter Payroll Reference ID</label>
+                    <div class="input-group">
+                        <input class="form-control" id="payrollId" placeholder="Insert UUID reference...">
+                        <button class="btn btn-primary" onclick="loadPayroll()">
+                            <i class="fas fa-search me-1"></i> Load Statement
+                        </button>
+                    </div>
+                </div>
+
+                <div id="result">
+                    <div class="text-center py-5 text-muted" id="loaderState">
+                        <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                        <p class="mb-0">Waiting for reference payload...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        const monthsName = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        async function loadPayroll() {
+            const uuid = document.getElementById('payrollId').value.trim();
+            const result = document.getElementById('result');
+            const periodEl = document.getElementById('statementPeriod');
+            
+            if (!uuid) {
+                result.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-1"></i> Please enter a valid Reference ID.</div>`;
+                return;
+            }
+
+            result.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                    <p class="mb-0">Fetching statement from secure API...</p>
+                </div>`;
+
+            try {
+                const res = await fetch(`/api/v1/payroll/${uuid}`, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) {
+                    result.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-1"></i> Payslip details not found. Please verify the Reference ID.</div>`;
+                    periodEl.textContent = 'Statement not found';
+                    return;
+                }
+                
+                const p = await res.json();
+                
+                const monthStr = monthsName[p.month] || `Month ${p.month}`;
+                periodEl.textContent = `Statement for ${monthStr} ${p.year}`;
+
+                const grossVal = p.grossSalary != null ? p.grossSalary.toFixed(2) : '0.00';
+                const deductionsVal = p.deductions != null ? p.deductions.toFixed(2) : '0.00';
+                const overtimeHoursVal = p.overtimeHours != null ? p.overtimeHours.toFixed(1) : '0.0';
+                const overtimePayVal = p.overtimePay != null ? p.overtimePay.toFixed(2) : '0.00';
+                const netVal = p.netPay != null ? p.netPay.toFixed(2) : '0.00';
+                const statusColorClass = p.status === 'PAID' ? 'bg-success' : 'bg-warning';
+
+                result.innerHTML = `
+                    <div class="border rounded p-4 bg-white shadow-sm mt-3">
+                        <div class="row g-4">
+                            <!-- Employee & General Info -->
+                            <div class="col-md-6 border-end-md">
+                                <h6 class="text-uppercase text-xs fw-bold text-muted mb-3">Employee Details</h6>
+                                <p class="mb-2"><strong>Name:</strong> <span class="text-primary">${p.employeeFirstName || ''} ${p.employeeLastName || ''}</span></p>
+                                <p class="mb-2"><strong>Employee ID:</strong> <code>${p.employeeId || ''}</code></p>
+                                <p class="mb-2"><strong>Period Covered:</strong> ${monthStr} ${p.year}</p>
+                                <p class="mb-0"><strong>Payslip ID:</strong> <small class="text-muted">${p.payrollId}</small></p>
+                            </div>
+
+                            <!-- Payment Breakdown -->
+                            <div class="col-md-6">
+                                <h6 class="text-uppercase text-xs fw-bold text-muted mb-3">Salary Breakdown</h6>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Base Gross Salary:</span>
+                                    <span class="fw-semibold">$${grossVal}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-success">
+                                    <span>Overtime (${overtimeHoursVal} hrs):</span>
+                                    <span class="fw-semibold">+ $${overtimePayVal}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-danger">
+                                    <span>Deductions:</span>
+                                    <span class="fw-semibold">- $${deductionsVal}</span>
+                                </div>
+                                <hr class="my-2">
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <span class="h6 mb-0 fw-bold">Net Total:</span>
+                                    <span class="h4 mb-0 fw-extrabold text-primary">$${netVal}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div>
+                                <span class="text-muted me-2 small">Payment Status:</span>
+                                <span class="badge ${statusColorClass} px-3 py-2">${p.status || 'UNPAID'}</span>
+                            </div>
+                            <a href="/api/v1/payroll/${p.payrollId}/download" class="btn btn-danger btn-sm">
+                                <i class="fas fa-file-pdf me-1"></i> Download PDF Payslip
+                            </a>
+                        </div>
+                    </div>`;
+            } catch (err) {
+                console.error(err);
+                result.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-1"></i> Network error fetching payslip.</div>`;
+            }
+        }
+
+        // Auto-load if UUID is in path
+        document.addEventListener('DOMContentLoaded', () => {
+            const parts = window.location.pathname.split('/');
+            const uuid = parts[parts.length - 1];
+            if (uuid && uuid !== 'detail' && uuid !== 'payroll' && uuid.length > 10) {
+                document.getElementById('payrollId').value = uuid;
+                document.getElementById('inputContainer').style.display = 'none'; // hide manual search
+                loadPayroll();
+            }
+        });
+    </script>
 </body>
 </html>

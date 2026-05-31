@@ -20,7 +20,7 @@ public class Department {
     @Column(name = "department_name", nullable = false, unique = true)
     private String departmentName;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     @JoinColumn(name = "manager_id")
     private Employee managerId;
 

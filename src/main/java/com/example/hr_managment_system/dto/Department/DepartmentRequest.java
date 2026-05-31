@@ -7,8 +7,8 @@ public record DepartmentRequest(
         String DepartmentName,
         Employee managerId,
         String qrCode,
+        Double officeLatitude,
         Double officeLongitude,
-//        Double officeLongitude,
         Double geofenceRadiusMeters
 
 ) {

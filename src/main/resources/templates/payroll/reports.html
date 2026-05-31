@@ -19,9 +19,11 @@
                 <li><a href="/admin/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li class="menu-label">Management</li>
                 <li><a href="/admin/employees"><i class="fas fa-users"></i> Employees</a></li>
+                <li><a href="/admin/departments"><i class="fas fa-building"></i> Departments</a></li>
                 <li><a href="/admin/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
                 <li><a href="/admin/attendance"><i class="fas fa-clock"></i> Attendance</a></li>
                 <li><a href="/admin/payroll" class="active"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li><a href="/admin/shifts"><i class="fas fa-calendar-alt"></i> Shifts</a></li>
                 <li class="menu-label">Other</li>
                 <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -31,6 +33,7 @@
                 <li><a href="/hr/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
                 <li><a href="/hr/attendance"><i class="fas fa-clock"></i> Attendance Report</a></li>
                 <li><a href="/hr/payroll" class="active"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li><a href="/hr/shifts"><i class="fas fa-calendar-alt"></i> Shifts</a></li>
                 <li class="menu-label">Other</li>
                 <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -40,7 +43,7 @@
         <div class="main-content">
             <nav class="navbar-custom">
                 <div>
-                    <span>Payroll Management</span>
+                    <span>Payroll Hub</span>
                 </div>
                 <div>
                     <span th:text="${role == 'ADMIN' ? 'Admin' : 'HR Manager'}"></span>
@@ -49,18 +52,87 @@
             </nav>
 
             <div class="content">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h2 class="h4 mb-0"><i class="fas fa-money-bill"></i> Payroll Reports</h2>
-                    <a class="btn btn-outline-primary btn-sm" th:href="${role == 'ADMIN'} ? @{/admin/dashboard} : @{/hr/dashboard}">
-                        <i class="fas fa-arrow-left"></i> Back
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="h4 mb-1"><i class="fas fa-money-bill text-primary"></i> Payroll Management</h2>
+                        <p class="text-muted small mb-0">Process monthly salary distributions and audit employee payslip statements.</p>
+                    </div>
+                    <a class="btn btn-secondary btn-sm" th:href="${role == 'ADMIN'} ? @{/admin/dashboard} : @{/hr/dashboard}">
+                        <i class="fas fa-arrow-left"></i> Dashboard
                     </a>
                 </div>
-                <div class="card shadow-sm">
-                    <div class="card-body p-4">
-                        <p class="text-muted">Use this page to browse payroll records and manage payroll processing details.</p>
-                        <a class="btn btn-primary" th:href="${role == 'ADMIN'} ? @{/admin/payroll/process} : @{/hr/payroll/process}">
-                            <i class="fas fa-calculator"></i> Process Payroll
-                        </a>
+
+                <div class="row g-4">
+                    <!-- Actions panel -->
+                    <div class="col-md-4">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0 text-primary"><i class="fas fa-cogs"></i> Operations</h5>
+                            </div>
+                            <div class="card-body d-flex flex-column justify-content-between">
+                                <p class="text-muted small">Calculate hours, overtime and process the distribution ledger for the current month.</p>
+                                <a class="btn btn-primary w-100 mt-2" th:href="${role == 'ADMIN'} ? @{/admin/payroll/process} : @{/hr/payroll/process}">
+                                    <i class="fas fa-calculator me-1"></i> Run Payroll System
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search / Lookup Panel -->
+                    <div class="col-md-8">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0 text-primary"><i class="fas fa-search"></i> Employee Payroll History</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-sm-9">
+                                        <label class="form-label fw-semibold">Select Employee to Audit</label>
+                                        <select class="form-select" id="employeeSelect">
+                                            <option value="" disabled selected>Loading active employees...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <button class="btn btn-primary w-100" id="auditBtn" onclick="loadEmployeePayroll()" disabled>
+                                            <i class="fas fa-search me-1"></i> Retrieve
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details History Table -->
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 text-primary"><i class="fas fa-list"></i> Payroll History Log</h5>
+                                <span id="auditTargetName" class="badge bg-info">Select employee above</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Reference ID</th>
+                                            <th>Gross Salary</th>
+                                            <th>Overtime Pay</th>
+                                            <th>Deductions</th>
+                                            <th>Net Salary</th>
+                                            <th>Pay Period</th>
+                                            <th>Status</th>
+                                            <th class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="payrollRows">
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted py-4">
+                                                Please select an employee and click "Retrieve" to fetch statements.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -70,6 +142,7 @@
             </footer>
         </div>
     </div>
+
     <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
     <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
     <script>
@@ -78,7 +151,90 @@
                 window.location.href = '/logout';
             }
         }
+
+        const monthsName = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load employee options
+            fetch('/api/v1/employee?isActive=true')
+            .then(res => res.json())
+            .then(data => {
+                const select = document.getElementById('employeeSelect');
+                select.innerHTML = '<option value="" disabled selected>Choose employee to audit...</option>';
+                data.forEach(emp => {
+                    const opt = document.createElement('option');
+                    opt.value = emp.employeeId;
+                    opt.setAttribute('data-name', `${emp.firstName} ${emp.lastName}`);
+                    opt.textContent = `${emp.firstName} ${emp.lastName} (ID: ${emp.employeeId})`;
+                    select.appendChild(opt);
+                });
+                document.getElementById('auditBtn').disabled = false;
+            })
+            .catch(err => {
+                console.error(err);
+                const select = document.getElementById('employeeSelect');
+                select.innerHTML = '<option value="" disabled selected>Failed to load employees.</option>';
+            });
+        });
+
+        async function loadEmployeePayroll() {
+            const select = document.getElementById('employeeSelect');
+            const employeeId = select.value;
+            if (!employeeId) return;
+
+            const selectedOption = select.options[select.selectedIndex];
+            const fullName = selectedOption.getAttribute('data-name');
+            document.getElementById('auditTargetName').textContent = `Auditing: ${fullName}`;
+
+            const rows = document.getElementById('payrollRows');
+            rows.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        <i class="fas fa-spinner fa-spin me-2"></i> Querying payslips from databases...
+                    </td>
+                </tr>`;
+
+            try {
+                const res = await fetch(`/api/v1/payroll/employee/${employeeId}`, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) {
+                    rows.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">No payroll records found for this employee.</td></tr>`;
+                    return;
+                }
+                const data = await res.json();
+
+                if (data && data.length > 0) {
+                    rows.innerHTML = data.map(p => {
+                        const monthStr = monthsName[p.month] || `Month ${p.month}`;
+                        const grossVal = p.grossSalary != null ? `$${p.grossSalary.toFixed(2)}` : '$0.00';
+                        const overtimeVal = p.overtimePay != null ? `$${p.overtimePay.toFixed(2)}` : '$0.00';
+                        const deductionsVal = p.deductions != null ? `$${p.deductions.toFixed(2)}` : '$0.00';
+                        const netVal = p.netPay != null ? `$${p.netPay.toFixed(2)}` : '$0.00';
+                        const statusColor = p.status === 'PAID' ? 'bg-success' : 'bg-warning';
+
+                        return `<tr>
+                            <td><span class="fw-semibold font-monospace">${p.payrollId.substring(0, 8)}...</span></td>
+                            <td>${grossVal}</td>
+                            <td class="text-success">+ ${overtimeVal}</td>
+                            <td class="text-danger">- ${deductionsVal}</td>
+                            <td class="fw-bold text-primary">${netVal}</td>
+                            <td>${monthStr} ${p.year}</td>
+                            <td><span class="badge ${statusColor}">${p.status || 'UNPAID'}</span></td>
+                            <td class="text-end">
+                                <div class="btn-group gap-1">
+                                    <a href="/employee/payroll/${p.payrollId}" class="btn btn-sm btn-outline-primary py-1 px-2"><i class="fas fa-eye"></i> View</a>
+                                    <a href="/api/v1/payroll/${p.payrollId}/download" class="btn btn-sm btn-outline-danger py-1 px-2"><i class="fas fa-file-pdf"></i> PDF</a>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                } else {
+                    rows.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">No payroll records found for this employee.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+                rows.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Error loading statements.</td></tr>`;
+            }
+        }
     </script>
 </body>
 </html>
-

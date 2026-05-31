@@ -67,7 +67,8 @@ public class AuthServiceImpl implements AuthService {
                 employee.getEmployeeId(),
                 employee.getUsername(),
                 employee.getEmail(),
-                employee.getRole().getRoleName().name()
+                employee.getRole().getRoleName().name(),
+                employee.getDepartment() != null ? employee.getDepartment().getDepartmentId() : null
         );
     }
 

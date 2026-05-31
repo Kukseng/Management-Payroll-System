@@ -19,18 +19,21 @@
                 <li><a th:href="@{/admin/dashboard}" th:classappend="${#request.requestURI.contains('/admin/dashboard') ? 'active' : ''}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li class="menu-label">Management</li>
                 <li><a th:href="@{/admin/employees}" th:classappend="${#request.requestURI.contains('/employees') ? 'active' : ''}"><i class="fas fa-users"></i> Employees</a></li>
-                <li><a th:href="@{/admin/leaves/pending}"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
-                <li><a th:href="@{/admin/attendance}"><i class="fas fa-clock"></i> Attendance</a></li>
-                <li><a th:href="@{/admin/payroll}"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li><a th:href="@{/admin/departments}" th:classappend="${#request.requestURI.contains('/departments') ? 'active' : ''}"><i class="fas fa-building"></i> Departments</a></li>
+                <li><a th:href="@{/admin/leaves/pending}" th:classappend="${#request.requestURI.contains('/leaves') ? 'active' : ''}"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
+                <li><a th:href="@{/admin/attendance}" th:classappend="${#request.requestURI.contains('/attendance') ? 'active' : ''}"><i class="fas fa-clock"></i> Attendance</a></li>
+                <li><a th:href="@{/admin/payroll}" th:classappend="${#request.requestURI.contains('/payroll') ? 'active' : ''}"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li><a th:href="@{/admin/shifts}" th:classappend="${#request.requestURI.contains('/shifts') ? 'active' : ''}"><i class="fas fa-calendar-alt"></i> Shifts</a></li>
                 <li class="menu-label">Other</li>
                 <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
             <ul class="nav-menu" th:if="${role == 'MANAGER'}">
                 <li><a th:href="@{/hr/dashboard}" th:classappend="${#request.requestURI.contains('/hr/dashboard') ? 'active' : ''}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li class="menu-label">Management</li>
-                <li><a th:href="@{/hr/leaves/pending}"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
-                <li><a th:href="@{/hr/attendance}"><i class="fas fa-clock"></i> Attendance Report</a></li>
-                <li><a th:href="@{/hr/payroll}"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li><a th:href="@{/hr/leaves/pending}" th:classappend="${#request.requestURI.contains('/leaves') ? 'active' : ''}"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
+                <li><a th:href="@{/hr/attendance}" th:classappend="${#request.requestURI.contains('/attendance') ? 'active' : ''}"><i class="fas fa-clock"></i> Attendance Report</a></li>
+                <li><a th:href="@{/hr/payroll}" th:classappend="${#request.requestURI.contains('/payroll') ? 'active' : ''}"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li><a th:href="@{/hr/shifts}" th:classappend="${#request.requestURI.contains('/shifts') ? 'active' : ''}"><i class="fas fa-calendar-alt"></i> Shifts</a></li>
                 <li class="menu-label">Other</li>
                 <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>

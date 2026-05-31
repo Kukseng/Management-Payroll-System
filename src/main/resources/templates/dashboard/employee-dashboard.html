@@ -159,54 +159,152 @@
             }
         }
 
-        // Load attendance data
-        fetch('/api/v1/attendance/my')
-        .then(res => res.json())
-        .then(data => {
-            const tbody = document.getElementById('attendanceList');
-            tbody.innerHTML = '';
-
-            if (data && data.length > 0) {
-                data.slice(0, 5).forEach(att => {
-                    const row = `<tr>
-                        <td>${att.date || 'N/A'}</td>
-                        <td>${att.clockInTime || 'N/A'}</td>
-                        <td>${att.clockOutTime || 'N/A'}</td>
-                        <td>${att.workHours || 0} hrs</td>
-                        <td><span class="badge bg-success">${att.status || 'Present'}</span></td>
-                    </tr>`;
-                    tbody.innerHTML += row;
-                });
-            } else {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No attendance records</td></tr>';
+        function safeParseDate(val) {
+            if (!val) return null;
+            if (val instanceof Date) return val;
+            if (Array.isArray(val)) {
+                if (val.length < 3) return null;
+                const year = val[0];
+                const month = val[1] - 1; // JS month is 0-11
+                const day = val[2];
+                const hour = val[3] || 0;
+                const minute = val[4] || 0;
+                const second = val[5] || 0;
+                return new Date(year, month, day, hour, minute, second);
             }
-        })
-        .catch(err => console.log('Error:', err));
-
-        // Load leaves data
-        fetch('/api/v1/leave/my')
-        .then(res => res.json())
-        .then(data => {
-            const tbody = document.getElementById('leavesList');
-            tbody.innerHTML = '';
-
-            if (data && data.length > 0) {
-                data.slice(0, 5).forEach(leave => {
-                    const statusColor = leave.status === 'PENDING' ? 'warning' :
-                                       leave.status === 'APPROVED' ? 'success' : 'danger';
-                    const row = `<tr>
-                        <td>${leave.type || 'N/A'}</td>
-                        <td>${leave.startDate || 'N/A'}</td>
-                        <td>${leave.endDate || 'N/A'}</td>
-                        <td><span class="badge bg-${statusColor}">${leave.status || 'Pending'}</span></td>
-                    </tr>`;
-                    tbody.innerHTML += row;
-                });
-            } else {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No leave requests</td></tr>';
+            if (typeof val === 'object') {
+                const year = val.year;
+                let month = val.monthValue !== undefined ? val.monthValue - 1 : val.month;
+                if (typeof month === 'string') {
+                    const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+                    month = months.indexOf(month.toUpperCase());
+                    if (month === -1) month = 0;
+                }
+                const day = val.dayOfMonth || val.day || 1;
+                const hour = val.hour || 0;
+                const minute = val.minute || 0;
+                const second = val.second || 0;
+                if (year !== undefined && month !== undefined) {
+                    return new Date(year, month, day, hour, minute, second);
+                }
             }
-        })
-        .catch(err => console.log('Error:', err));
+            const d = new Date(val);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function formatDate(val) {
+            const d = safeParseDate(val);
+            if (!d) return 'N/A';
+            return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function formatTime(val) {
+            const d = safeParseDate(val);
+            if (!d) return 'N/A';
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Initialize dashboard stats and lists
+        async function initDashboard() {
+            try {
+                // Get auth details first to obtain employee ID
+                const meRes = await fetch('/api/v1/auth/me', { headers: { 'Accept': 'application/json' } });
+                if (!meRes.ok) return;
+                const me = await meRes.json();
+                const employeeId = me.employeeId;
+
+                // 1. Fetch leave balance
+                if (employeeId) {
+                    fetch(`/api/v1/leave/balance/${employeeId}`)
+                    .then(res => res.json())
+                    .then(balance => {
+                        document.getElementById('leaveBalance').textContent = balance.remainingDays != null ? balance.remainingDays : 0;
+                    })
+                    .catch(err => console.error('Error loading leave balance:', err));
+                }
+
+                // 2. Fetch attendance data
+                fetch('/api/v1/attendance/my')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('attendanceList');
+                    tbody.innerHTML = '';
+
+                    const currentMonth = new Date().getMonth();
+                    let presentCount = 0;
+                    let hoursSum = 0.0;
+
+                    if (data && data.length > 0) {
+                        data.forEach(att => {
+                            const d = safeParseDate(att.clockIn);
+                            if (d) {
+                                if (d.getMonth() === currentMonth) {
+                                    presentCount++;
+                                    if (att.totalHours != null) {
+                                        hoursSum += att.totalHours;
+                                    }
+                                }
+                            }
+                        });
+
+                        // Render recent 5 attendance records
+                        data.slice(0, 5).forEach(att => {
+                            const dateStr = formatDate(att.clockIn);
+                            const clockInStr = formatTime(att.clockIn);
+                            const clockOutStr = formatTime(att.clockOut);
+
+                            const hoursVal = att.totalHours != null ? att.totalHours.toFixed(1) : '0.0';
+                            const statusVal = att.statusName || att.status || 'PRESENT';
+
+                            const row = `<tr>
+                                <td>${dateStr}</td>
+                                <td>${clockInStr}</td>
+                                <td>${clockOutStr}</td>
+                                <td>${hoursVal} hrs</td>
+                                <td><span class="badge bg-success">${statusVal}</span></td>
+                            </tr>`;
+                            tbody.innerHTML += row;
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No attendance records</td></tr>';
+                    }
+
+                    document.getElementById('presentDays').textContent = presentCount;
+                    document.getElementById('totalHours').textContent = hoursSum.toFixed(1);
+                })
+                .catch(err => console.error('Error loading attendance:', err));
+
+                // 3. Fetch leaves data
+                fetch('/api/v1/leave/my')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('leavesList');
+                    tbody.innerHTML = '';
+
+                    if (data && data.length > 0) {
+                        data.slice(0, 5).forEach(leave => {
+                            const statusColor = leave.status === 'PENDING' ? 'warning' :
+                                               leave.status === 'APPROVED' ? 'success' : 'danger';
+                            const row = `<tr>
+                                <td>${leave.type || 'N/A'}</td>
+                                <td>${leave.startDate || 'N/A'}</td>
+                                <td>${leave.endDate || 'N/A'}</td>
+                                <td><span class="badge bg-${statusColor}">${leave.status || 'Pending'}</span></td>
+                            </tr>`;
+                            tbody.innerHTML += row;
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No leave requests</td></tr>';
+                    }
+                })
+                .catch(err => console.error('Error loading leaves:', err));
+
+            } catch (err) {
+                console.error('Error initializing dashboard data:', err);
+            }
+        }
+
+        initDashboard();
     </script>
 </body>
 </html>

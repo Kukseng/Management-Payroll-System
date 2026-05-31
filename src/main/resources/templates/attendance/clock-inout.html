@@ -3,31 +3,138 @@
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Clock In/Out</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
     <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
-<body class="bg-light"><div class="container py-5" style="max-width: 900px;">
-    <div class="card shadow-sm"><div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">Clock In / Out</h1><a class="btn btn-outline-primary btn-sm" th:href="@{/employee/dashboard}">Back</a></div>
-        <div id="msg"></div>
-        <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">Employee ID</label><input class="form-control" id="employeeId" placeholder="emp-id"></div>
-            <div class="col-md-6"><label class="form-label">Department ID</label><input class="form-control" id="departmentId" placeholder="dept-id"></div>
-            <div class="col-md-6"><label class="form-label">QR Code</label><input class="form-control" id="qrCode" placeholder="QR-..."></div>
-            <div class="col-md-6"><label class="form-label">Status</label><select class="form-select" id="status"><option>PRESENT</option><option>LATE</option><option>None</option><option>ABSENT</option></select></div>
-            <div class="col-md-6"><label class="form-label">Latitude In</label><input class="form-control" type="number" step="any" id="latitudeIn"></div>
-            <div class="col-md-6"><label class="form-label">Longitude In</label><input class="form-control" type="number" step="any" id="longitudeIn"></div>
-            <div class="col-md-6"><label class="form-label">Latitude Out</label><input class="form-control" type="number" step="any" id="latitudeOut"></div>
-            <div class="col-md-6"><label class="form-label">Longitude Out</label><input class="form-control" type="number" step="any" id="longitudeOut"></div>
-            <div class="col-12 d-flex gap-2">
-                <button class="btn btn-success" onclick="submitClock('clock-in')">Clock In</button>
-                <button class="btn btn-danger" onclick="submitClock('clock-out')">Clock Out</button>
+<body class="bg-light">
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h3><i class="fas fa-building"></i> HR System</h3>
             </div>
+            <ul class="nav-menu">
+                <li><a href="/employee/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">My Info</li>
+                <li><a href="/employee/profile"><i class="fas fa-user"></i> My Profile</a></li>
+                <li class="menu-label">Attendance & Leave</li>
+                <li><a href="/employee/attendance/clock-inout" class="active"><i class="fas fa-clock"></i> Clock In/Out</a></li>
+                <li><a href="/employee/attendance"><i class="fas fa-calendar-check"></i> My Attendance</a></li>
+                <li><a href="/employee/leaves/request"><i class="fas fa-file-alt"></i> Request Leave</a></li>
+                <li><a href="/employee/leaves"><i class="fas fa-history"></i> My Leaves</a></li>
+                <li class="menu-label">Compensation</li>
+                <li><a href="/employee/payroll"><i class="fas fa-money-bill"></i> My Payroll</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <nav class="navbar-custom">
+                <div>
+                    <span>Attendance Recording</span>
+                </div>
+                <div>
+                    <span id="navUsername">Employee</span>
+                    <i class="fas fa-user-circle" style="font-size: 1.5em; margin-left: 10px;"></i>
+                </div>
+            </nav>
+
+            <div class="content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="h4 mb-1"><i class="fas fa-clock text-primary"></i> Clock In / Out</h2>
+                        <p class="text-muted small mb-0">Record your daily work attendance and verify your geofence status.</p>
+                    </div>
+                    <a class="btn btn-secondary btn-sm" th:href="@{/employee/dashboard}">
+                        <i class="fas fa-arrow-left"></i> Dashboard
+                    </a>
+                </div>
+
+                <div class="card shadow-sm border-0" style="max-width: 800px;">
+                    <div class="card-body p-4">
+                        <div id="attendanceStatusBanner"></div>
+                        <div id="msg"></div>
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="form-label fw-semibold">Employee ID</label><input class="form-control" id="employeeId" placeholder="emp-id" readonly></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">Department</label><select class="form-select" id="departmentId"><option value="">Select Department...</option></select></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">QR Code</label><input class="form-control" id="qrCode" placeholder="QR-..."></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">Status</label><select class="form-select" id="status"><option>PRESENT</option><option>LATE</option><option>None</option><option>ABSENT</option></select></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">Latitude In</label><input class="form-control" type="number" step="any" id="latitudeIn"></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">Longitude In</label><input class="form-control" type="number" step="any" id="longitudeIn"></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">Latitude Out</label><input class="form-control" type="number" step="any" id="latitudeOut"></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">Longitude Out</label><input class="form-control" type="number" step="any" id="longitudeOut"></div>
+                            <div class="col-12">
+                                <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
+                                    <button class="btn btn-outline-info btn-sm" type="button" onclick="detectLocation()">
+                                        <i class="fas fa-map-marker-alt"></i> Detect My Location
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="fillOfficeData()">
+                                        <i class="fas fa-building"></i> Use Office Location & QR Code (Demo/Testing)
+                                    </button>
+                                </div>
+                                <div id="locationStatus" class="small"></div>
+                            </div>
+                            <div class="col-12 d-flex gap-2 mt-4">
+                                <button class="btn btn-success" id="clockInBtn" onclick="submitClock('clock-in')">Clock In</button>
+                                <button class="btn btn-danger" id="clockOutBtn" onclick="submitClock('clock-out')">Clock Out</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <p>&copy; 2026 HR Management System. All rights reserved.</p>
+            </footer>
         </div>
-    </div></div>
-</div>
+    </div>
 <script>
+let allDepartments = [];
+
 // Auto-load current user's employee ID on page load
 document.addEventListener('DOMContentLoaded', async () => {
+  // Bind listeners first
+  document.getElementById('departmentId').addEventListener('change', (e) => {
+    const deptId = e.target.value;
+    const qrInput = document.getElementById('qrCode');
+    if (deptId) {
+      const dept = allDepartments.find(d => d.departmentId === deptId);
+      if (dept && dept.qrCode) {
+        qrInput.value = dept.qrCode;
+      } else {
+        qrInput.value = '';
+      }
+    } else {
+      qrInput.value = '';
+    }
+    updateGeofenceStatus();
+  });
+  document.getElementById('latitudeIn').addEventListener('input', updateGeofenceStatus);
+  document.getElementById('longitudeIn').addEventListener('input', updateGeofenceStatus);
+
+  // Load departments first
+  try {
+    const deptRes = await fetch('/api/v1/department', {
+      headers: {'Accept': 'application/json'}
+    });
+    if (deptRes.ok) {
+      allDepartments = await deptRes.json();
+      const deptSelect = document.getElementById('departmentId');
+      deptSelect.innerHTML = '<option value="">Select Department...</option>';
+      allDepartments.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.departmentId;
+        opt.textContent = d.departmentName;
+        deptSelect.appendChild(opt);
+      });
+    }
+  } catch (err) {
+    console.error('Error fetching departments:', err);
+  }
+
+  // Load current user profile details
   try {
     const res = await fetch('/api/v1/auth/me', {
       headers: {'Accept': 'application/json'}
@@ -35,11 +142,215 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (res.ok) {
       const user = await res.json();
       document.getElementById('employeeId').value = user.employeeId || '';
+      document.getElementById('navUsername').textContent = user.username || 'Employee';
+      if (user.departmentId) {
+        document.getElementById('departmentId').value = user.departmentId;
+        // Trigger change event to auto-fill QR code
+        document.getElementById('departmentId').dispatchEvent(new Event('change'));
+      }
+      // Check if employee is currently clocked in/out
+      await checkAttendanceStatus();
     }
   } catch (e) {
     console.log('Could not load user data, please enter manually');
   }
+
+  // Try to automatically detect browser geolocation
+  const statusEl = document.getElementById('locationStatus');
+  if (statusEl) {
+    statusEl.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin"></i> Detecting location...</span>';
+  }
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      document.getElementById('latitudeIn').value = lat;
+      document.getElementById('longitudeIn').value = lon;
+      document.getElementById('latitudeOut').value = lat;
+      document.getElementById('longitudeOut').value = lon;
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> Browser location auto-detected successfully.</span>';
+      }
+      updateGeofenceStatus();
+    }, (err) => {
+      console.log('Browser geolocation auto-detect skipped/blocked:', err.message);
+      if (statusEl) {
+        statusEl.innerHTML = `<span class="text-secondary"><i class="fas fa-info-circle"></i> Auto-detection skipped/blocked: ${err.message}. Use buttons to detect or fill coordinates.</span>`;
+      }
+    });
+  } else {
+    if (statusEl) {
+      statusEl.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle"></i> Geolocation not supported by your browser.</span>';
+    }
+  }
 });
+
+function safeParseDate(val) {
+  if (!val) return null;
+  if (val instanceof Date) return val;
+  if (Array.isArray(val)) {
+    if (val.length < 3) return null;
+    const year = val[0];
+    const month = val[1] - 1; // JS month is 0-11
+    const day = val[2];
+    const hour = val[3] || 0;
+    const minute = val[4] || 0;
+    const second = val[5] || 0;
+    return new Date(year, month, day, hour, minute, second);
+  }
+  if (typeof val === 'object') {
+    const year = val.year;
+    let month = val.monthValue !== undefined ? val.monthValue - 1 : val.month;
+    if (typeof month === 'string') {
+      const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+      month = months.indexOf(month.toUpperCase());
+      if (month === -1) month = 0;
+    }
+    const day = val.dayOfMonth || val.day || 1;
+    const hour = val.hour || 0;
+    const minute = val.minute || 0;
+    const second = val.second || 0;
+    if (year !== undefined && month !== undefined) {
+      return new Date(year, month, day, hour, minute, second);
+    }
+  }
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+async function checkAttendanceStatus() {
+  const statusBanner = document.getElementById('attendanceStatusBanner');
+  const clockInBtn = document.getElementById('clockInBtn');
+  const clockOutBtn = document.getElementById('clockOutBtn');
+
+  try {
+    const res = await fetch('/api/v1/attendance/my', {
+      headers: {'Accept': 'application/json'}
+    });
+    if (res.ok) {
+      const records = await res.json();
+      // Find open record (no clock out time set)
+      const openRecord = records.find(r => r.clockOut === null);
+
+      if (openRecord) {
+        const dateObj = safeParseDate(openRecord.clockIn);
+        const timeStr = dateObj ? dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A';
+        const dateStr = dateObj ? dateObj.toLocaleDateString([], {month: 'short', day: 'numeric'}) : 'N/A';
+        statusBanner.innerHTML = `
+          <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center">
+            <i class="fas fa-info-circle me-2 fs-5"></i>
+            <div><strong>Status:</strong> Currently Clocked In since <strong>${dateStr} at ${timeStr}</strong>.</div>
+          </div>`;
+        clockInBtn.disabled = true;
+        clockOutBtn.disabled = false;
+      } else {
+        statusBanner.innerHTML = `
+          <div class="alert alert-secondary py-2 px-3 mb-3 d-flex align-items-center">
+            <i class="fas fa-sign-out-alt me-2 fs-5"></i>
+            <div><strong>Status:</strong> Currently Clocked Out. Ready to clock in.</div>
+          </div>`;
+        clockInBtn.disabled = false;
+        clockOutBtn.disabled = true;
+      }
+    }
+  } catch (e) {
+    console.error('Error checking attendance status:', e);
+  }
+}
+
+function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // Earth radius in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+function updateGeofenceStatus() {
+  const deptId = document.getElementById('departmentId').value;
+  const latIn = parseFloat(document.getElementById('latitudeIn').value);
+  const lonIn = parseFloat(document.getElementById('longitudeIn').value);
+  const statusEl = document.getElementById('locationStatus');
+
+  if (!deptId || isNaN(latIn) || isNaN(lonIn)) return;
+
+  const dept = allDepartments.find(d => d.departmentId === deptId);
+  if (dept && dept.officeLatitude != null && dept.officeLongitude != null) {
+    const distance = calculateDistanceMeters(latIn, lonIn, dept.officeLatitude, dept.officeLongitude);
+    const radius = dept.geofenceRadiusMeters || 150;
+    const inside = distance <= radius;
+
+    if (inside) {
+      statusEl.innerHTML = `<span class="text-success"><i class="fas fa-check-circle"></i> Geofence Verified: You are ${distance.toFixed(1)}m from office (Within ${radius}m geofence).</span>`;
+    } else {
+      statusEl.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle"></i> Geofence Violation: You are ${distance.toFixed(1)}m from office (Outside ${radius}m geofence).</span>`;
+    }
+  }
+}
+
+function detectLocation() {
+  const statusEl = document.getElementById('locationStatus');
+  if (statusEl) {
+    statusEl.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin"></i> Querying browser Geolocation API...</span>';
+  }
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      document.getElementById('latitudeIn').value = lat;
+      document.getElementById('longitudeIn').value = lon;
+      document.getElementById('latitudeOut').value = lat;
+      document.getElementById('longitudeOut').value = lon;
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> Location detected successfully!</span>';
+      }
+      updateGeofenceStatus();
+    }, (err) => {
+      alert("Error getting location: " + err.message);
+      if (statusEl) {
+        statusEl.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Location detection failed: ${err.message}</span>`;
+      }
+    });
+  } else {
+    alert("Geolocation is not supported by this browser.");
+    if (statusEl) {
+      statusEl.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle"></i> Geolocation is not supported by this browser.</span>';
+    }
+  }
+}
+
+function fillOfficeData() {
+  const statusEl = document.getElementById('locationStatus');
+  const deptId = document.getElementById('departmentId').value;
+  if (!deptId) {
+    alert("Please select a department first.");
+    return;
+  }
+  const dept = allDepartments.find(d => d.departmentId === deptId);
+  if (dept) {
+    if (dept.qrCode) {
+      document.getElementById('qrCode').value = dept.qrCode;
+    }
+    if (dept.officeLatitude != null) {
+      document.getElementById('latitudeIn').value = dept.officeLatitude;
+      document.getElementById('latitudeOut').value = dept.officeLatitude;
+    }
+    if (dept.officeLongitude != null) {
+      document.getElementById('longitudeIn').value = dept.officeLongitude;
+      document.getElementById('longitudeOut').value = dept.officeLongitude;
+    }
+    if (statusEl) {
+      statusEl.innerHTML = `<span class="text-warning"><i class="fas fa-building"></i> Office coordinates and QR Code for "${dept.departmentName}" loaded!</span>`;
+    }
+    updateGeofenceStatus();
+  } else {
+    alert("Selected department details not found.");
+  }
+}
 
 async function submitClock(type) {
   const msg = document.getElementById('msg');
@@ -74,6 +385,7 @@ async function submitClock(type) {
 
     if (res.ok) {
       msg.innerHTML = '<div class="alert alert-success">Attendance saved successfully!</div>';
+      await checkAttendanceStatus();
     } else if (res.status === 401) {
       msg.innerHTML = '<div class="alert alert-danger">Session expired. Please login again.</div>';
     } else {
@@ -82,6 +394,12 @@ async function submitClock(type) {
     }
   } catch (error) {
     msg.innerHTML = `<div class="alert alert-danger">Network error: ${error.message}</div>`;
+  }
+}
+
+function logout() {
+  if (confirm('Are you sure you want to logout?')) {
+    window.location.href = '/logout';
   }
 }
 </script>

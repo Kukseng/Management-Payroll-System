@@ -1,47 +1,250 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>HR Attendance Report</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Attendance Report - HR Management System</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
     <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
-<body class="bg-light"><div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">HR Attendance Report</h1><a class="btn btn-outline-primary btn-sm" th:href="@{/hr/dashboard}">Back</a></div>
-    <div class="card shadow-sm mb-3"><div class="card-body row g-3 align-items-end">
-        <div class="col-md-4"><label class="form-label">Department ID</label><input class="form-control" id="departmentId" placeholder="HR or IT"></div>
-        <div class="col-md-2"><label class="form-label">Month</label><input class="form-control" id="month" type="number" min="1" max="12" value="4"></div>
-        <div class="col-md-2"><label class="form-label">Year</label><input class="form-control" id="year" type="number" value="2026"></div>
-        <div class="col-md-4"><button class="btn btn-primary" onclick="loadReport()">Load Report</button></div>
-    </div></div>
-    <div class="card shadow-sm"><div class="card-body"><table class="table table-striped"><thead><tr><th>ID</th><th>Employee</th><th>Clock In</th><th>Clock Out</th><th>Status</th></tr></thead><tbody id="rows"><tr><td colspan="5">Use filters to load data</td></tr></tbody></table></div></div>
-</div>
-<script>
-function buildAuthHeaders(){
-  return {'Accept': 'application/json'};
-}
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h3><i class="fas fa-building"></i> HR System</h3>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/hr/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">Management</li>
+                <li><a href="/hr/leaves/pending"><i class="fas fa-file-alt"></i> Leave Requests</a></li>
+                <li><a href="/hr/attendance" class="active"><i class="fas fa-clock"></i> Attendance Report</a></li>
+                <li><a href="/hr/payroll"><i class="fas fa-money-bill"></i> Payroll</a></li>
+                <li><a href="/hr/shifts"><i class="fas fa-calendar-alt"></i> Shifts</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
 
-async function loadReport(){
-  const rows = document.getElementById('rows');
-  const departmentId = document.getElementById('departmentId').value.trim();
-  const endpoint = departmentId
-    ? `/api/v1/attendance/hr?departmentId=${encodeURIComponent(departmentId)}&month=${document.getElementById('month').value}&year=${document.getElementById('year').value}`
-    : '/api/v1/attendance/employees?isActive=true';
+        <!-- Main Content -->
+        <div class="main-content">
+            <nav class="navbar-custom">
+                <div>
+                    <span>HR Audit Hub</span>
+                </div>
+                <div>
+                    <span>HR Manager</span>
+                    <i class="fas fa-user-circle" style="font-size: 1.5em; margin-left: 10px;"></i>
+                </div>
+            </nav>
 
-  try {
-    const res = await fetch(endpoint, { headers: buildAuthHeaders() });
-    if (!res.ok) {
-      const err = await res.text();
-      rows.innerHTML = `<tr><td colspan="5">${err || 'Failed to load records'}</td></tr>`;
-      return;
-    }
-    const data = await res.json();
-    rows.innerHTML = data.map(a => `<tr><td>${a.attendanceId||''}</td><td>${a.employeeId||''}</td><td>${a.clockIn||''}</td><td>${a.clockOut||''}</td><td>${a.statusName||a.status||''}</td></tr>`).join('') || '<tr><td colspan="5">No records</td></tr>';
-  } catch (_) {
-    rows.innerHTML = '<tr><td colspan="5">Failed to load records</td></tr>';
-  }
-}
+            <div class="content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="h4 mb-1"><i class="fas fa-clock text-primary"></i> Department Attendance Audit</h2>
+                        <p class="text-muted small mb-0">Select department and billing cycles to view active clock logs.</p>
+                    </div>
+                    <a class="btn btn-secondary btn-sm" th:href="@{/hr/dashboard}">
+                        <i class="fas fa-arrow-left"></i> Dashboard
+                    </a>
+                </div>
 
-document.addEventListener('DOMContentLoaded', loadReport);
-</script>
+                <!-- Search / Filter Card -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-4">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Target Department</label>
+                                <select class="form-select" id="departmentId">
+                                    <option value="">Loading departments...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Month</label>
+                                <input class="form-control" id="month" type="number" min="1" max="12" value="1">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Year</label>
+                                <input class="form-control" id="year" type="number" value="2026">
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-primary w-100" onclick="loadReport()">
+                                    <i class="fas fa-filter me-1"></i> Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Card -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0 text-primary"><i class="fas fa-list-ul"></i> Audit Trail Records</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Ref ID</th>
+                                    <th>Employee ID</th>
+                                    <th>Clock In</th>
+                                    <th>Clock Out</th>
+                                    <th>Hours Worked</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rows">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        Use filters above and click "Apply Filters" to query logs.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <p>&copy; 2026 HR Management System. All rights reserved.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        function safeParseDate(val) {
+            if (!val) return null;
+            if (val instanceof Date) return val;
+            if (Array.isArray(val)) {
+                if (val.length < 3) return null;
+                const year = val[0];
+                const month = val[1] - 1; // JS month is 0-11
+                const day = val[2];
+                const hour = val[3] || 0;
+                const minute = val[4] || 0;
+                const second = val[5] || 0;
+                return new Date(year, month, day, hour, minute, second);
+            }
+            if (typeof val === 'object') {
+                const year = val.year;
+                let month = val.monthValue !== undefined ? val.monthValue - 1 : val.month;
+                if (typeof month === 'string') {
+                    const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+                    month = months.indexOf(month.toUpperCase());
+                    if (month === -1) month = 0;
+                }
+                const day = val.dayOfMonth || val.day || 1;
+                const hour = val.hour || 0;
+                const minute = val.minute || 0;
+                const second = val.second || 0;
+                if (year !== undefined && month !== undefined) {
+                    return new Date(year, month, day, hour, minute, second);
+                }
+            }
+            const d = new Date(val);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function formatDate(val) {
+            const d = safeParseDate(val);
+            if (!d) return 'N/A';
+            return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function formatDateTimeStr(val) {
+            const d = safeParseDate(val);
+            if (!d) return '--:--';
+            const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            return `${dateStr} at ${timeStr}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set current month/year
+            const now = new Date();
+            document.getElementById('month').value = now.getMonth() + 1;
+            document.getElementById('year').value = now.getFullYear();
+
+            // Load departments dropdown
+            fetch('/api/v1/department', { headers: { 'Accept': 'application/json' } })
+            .then(res => res.json())
+            .then(depts => {
+                const select = document.getElementById('departmentId');
+                select.innerHTML = '<option value="">-- Choose Department --</option>';
+                depts.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.departmentId;
+                    opt.textContent = d.departmentName;
+                    select.appendChild(opt);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('departmentId').innerHTML = '<option value="">Failed to load departments</option>';
+            });
+        });
+
+        async function loadReport() {
+            const rows = document.getElementById('rows');
+            const departmentId = document.getElementById('departmentId').value;
+            
+            if (!departmentId) {
+                rows.innerHTML = '<tr><td colspan="6" class="text-center text-warning py-4"><i class="fas fa-exclamation-triangle"></i> Please select a department first.</td></tr>';
+                return;
+            }
+
+            rows.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin me-2"></i> Querying attendance records...</td></tr>';
+            
+            const month = document.getElementById('month').value;
+            const year = document.getElementById('year').value;
+            const endpoint = `/api/v1/attendance/hr?departmentId=${encodeURIComponent(departmentId)}&month=${month}&year=${year}`;
+
+            try {
+                const res = await fetch(endpoint, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) {
+                    const err = await res.text();
+                    rows.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">${err || 'Failed to query records'}</td></tr>`;
+                    return;
+                }
+                const data = await res.json();
+                if (data && data.length > 0) {
+                    rows.innerHTML = data.map(a => {
+                        const inStr = formatDateTimeStr(a.clockIn);
+                        const outStr = formatDateTimeStr(a.clockOut);
+                        const statusVal = a.statusName || a.status || 'PRESENT';
+                        const hoursStr = a.totalHours != null ? `${a.totalHours.toFixed(1)} hrs` : '--';
+                        
+                        let badgeClass = 'bg-success';
+                        if (statusVal === 'LATE') badgeClass = 'bg-warning';
+                        if (statusVal === 'ABSENT') badgeClass = 'bg-danger';
+                        if (statusVal === 'None') badgeClass = 'bg-secondary';
+
+                        return `<tr>
+                            <td><small class="font-monospace">${a.attendanceId.substring(0, 8)}...</small></td>
+                            <td><code>${a.employeeId}</code></td>
+                            <td><i class="far fa-clock text-success me-1"></i> ${inStr}</td>
+                            <td><i class="far fa-clock text-danger me-1"></i> ${outStr}</td>
+                            <td>${hoursStr}</td>
+                            <td><span class="badge ${badgeClass}">${statusVal}</span></td>
+                        </tr>`;
+                    }).join('');
+                } else {
+                    rows.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No records found for this period.</td></tr>';
+                }
+            } catch (err) {
+                console.error(err);
+                rows.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Failed to load attendance report.</td></tr>';
+            }
+        }
+    </script>
 </body>
 </html>

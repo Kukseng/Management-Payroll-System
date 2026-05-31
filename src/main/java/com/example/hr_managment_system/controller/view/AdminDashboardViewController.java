@@ -71,6 +71,13 @@ public class AdminDashboardViewController {
         return "employee/edit";
     }
 
+    // Department Management
+    @GetMapping({"/departments", "/department"})
+    public String manageDepartments(Model model) {
+        model.addAttribute("role", "ADMIN");
+        return "department/manage";
+    }
+
     // Attendance Reports
     @GetMapping("/attendance")
     public String attendanceReport(Model model) {
@@ -101,6 +108,12 @@ public class AdminDashboardViewController {
     public String processPayrollForm(Model model) {
         model.addAttribute("role", "ADMIN");
         return "payroll/process";
+    }
+
+    @GetMapping("/shifts")
+    public String shiftsPage(Model model) {
+        model.addAttribute("role", "ADMIN");
+        return "shift/manage";
     }
 }
 

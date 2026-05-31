@@ -1,0 +1,18 @@
+==================================================
+SIMULATED OUTGOING EMAIL
+Timestamp: 2026-05-31T23:41:18.086964585
+To:        employee@example.com
+Subject:   Leave Request Update: APPROVED
+==================================================
+
+Hello Demo User,
+
+Your leave request status has been updated.
+
+New Status: APPROVED
+Remarks:    Updated by Human Resourcesj
+
+Best regards,
+HR Management System
+
+==================================================

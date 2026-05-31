@@ -16,5 +16,7 @@ public interface DepartmentService {
 
     void deleteDepartment(String id);
 
+    DepartmentResponse enableDepartment(String id);
+
 
 }

@@ -82,5 +82,11 @@ public class HRDashboardViewController {
         model.addAttribute("role", "MANAGER");
         return "payroll/process";
     }
+
+    @GetMapping("/shifts")
+    public String shiftsPage(Model model) {
+        model.addAttribute("role", "MANAGER");
+        return "shift/manage";
+    }
 }
 

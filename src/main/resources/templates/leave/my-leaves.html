@@ -1,22 +1,125 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>My Leaves</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Leave Requests - HR Management System</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
     <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
-<body class="bg-light"><div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">My Leave Requests</h1><a class="btn btn-outline-primary btn-sm" th:href="@{/employee/dashboard}">Back</a></div>
-    <div class="card shadow-sm"><div class="card-body"><table class="table table-striped"><thead><tr><th>ID</th><th>Type</th><th>From</th><th>To</th><th>Status</th></tr></thead><tbody id="rows"><tr><td colspan="5">Loading...</td></tr></tbody></table></div></div>
-</div>
-<script>
-fetch('/api/v1/leave/my', { headers: { 'Accept': 'application/json' } }).then(r => r.json()).then(data => {
-  const rows = document.getElementById('rows');
-  rows.innerHTML = data.map(l => `<tr><td>${l.leaveRequestId||''}</td><td>${l.type||''}</td><td>${l.startDate||''}</td><td>${l.endDate||''}</td><td>${l.status||''}</td></tr>`).join('') || '<tr><td colspan="5">No records</td></tr>';
-}).catch(()=>{
-  document.getElementById('rows').innerHTML='<tr><td colspan="5">Failed to load</td></tr>';
-});
-</script>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h3><i class="fas fa-building"></i> HR System</h3>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/employee/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">My Info</li>
+                <li><a href="/employee/profile"><i class="fas fa-user"></i> My Profile</a></li>
+                <li class="menu-label">Attendance & Leave</li>
+                <li><a href="/employee/attendance/clock-inout"><i class="fas fa-clock"></i> Clock In/Out</a></li>
+                <li><a href="/employee/attendance"><i class="fas fa-calendar-check"></i> My Attendance</a></li>
+                <li><a href="/employee/leaves/request"><i class="fas fa-file-alt"></i> Request Leave</a></li>
+                <li><a href="/employee/leaves" class="active"><i class="fas fa-history"></i> My Leaves</a></li>
+                <li class="menu-label">Compensation</li>
+                <li><a href="/employee/payroll"><i class="fas fa-money-bill"></i> My Payroll</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <nav class="navbar-custom">
+                <div>
+                    <span>My Leave Requests</span>
+                </div>
+                <div>
+                    <span th:text="${username} ?: 'Employee'"></span>
+                    <i class="fas fa-user-circle" style="font-size: 1.5em; margin-left: 10px;"></i>
+                </div>
+            </nav>
+
+            <div class="content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="h4 mb-1"><i class="fas fa-history text-primary"></i> Leave History</h2>
+                        <p class="text-muted small mb-0">Track status and dates for all your submitted leave requests.</p>
+                    </div>
+                    <a class="btn btn-secondary btn-sm" th:href="@{/employee/dashboard}">
+                        <i class="fas fa-arrow-left"></i> Dashboard
+                    </a>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Request ID</th>
+                                    <th>Leave Type</th>
+                                    <th>From Date</th>
+                                    <th>To Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rows">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin me-2"></i> Loading leave records...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <p>&copy; 2026 HR Management System. All rights reserved.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/v1/leave/my', { headers: { 'Accept': 'application/json' } })
+            .then(r => r.json())
+            .then(data => {
+                const rows = document.getElementById('rows');
+                if (data && data.length > 0) {
+                    rows.innerHTML = data.map(l => {
+                        const statusColor = l.status === 'PENDING' ? 'bg-warning' :
+                                           l.status === 'APPROVED' ? 'bg-success' : 'bg-danger';
+                        
+                        return `<tr>
+                            <td><span class="fw-semibold text-secondary font-monospace">${l.leaveRequestId.substring(0, 8)}...</span></td>
+                            <td><span class="text-primary fw-semibold"><i class="fas fa-plane-departure me-1"></i> ${l.type || 'N/A'}</span></td>
+                            <td>${l.startDate || 'N/A'}</td>
+                            <td>${l.endDate || 'N/A'}</td>
+                            <td><span class="badge ${statusColor}">${l.status || 'Pending'}</span></td>
+                        </tr>`;
+                    }).join('');
+                } else {
+                    rows.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No leave requests found</td></tr>';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('rows').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Failed to load leave records</td></tr>';
+            });
+        });
+    </script>
 </body>
 </html>
-

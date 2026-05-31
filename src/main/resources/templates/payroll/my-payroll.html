@@ -1,21 +1,154 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>My Payroll</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Payroll - HR Management System</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/6.4.0/css/all.min.css}">
     <link rel="stylesheet" th:href="@{/static/css/style.css?v=1.1}">
 </head>
-<body class="bg-light"><div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h4 mb-0">My Payroll</h1><a class="btn btn-outline-primary btn-sm" th:href="@{/employee/dashboard}">Back</a></div>
-    <div class="card shadow-sm"><div class="card-body"><table class="table table-striped"><thead><tr><th>ID</th><th>Month</th><th>Year</th><th>Gross ($)</th><th>Net ($)</th><th>Status</th><th class="text-end">Actions</th></tr></thead><tbody id="rows"><tr><td colspan="7">Loading...</td></tr></tbody></table></div></div>
-</div>
-<script>
-fetch('/api/v1/auth/me', { headers: { 'Accept': 'application/json' } }).then(r=>r.json()).then(async me => {
-  const data = await (await fetch(`/api/v1/payroll/employee/${me.employeeId}`, { headers:{'Accept': 'application/json'}})).json();
-  const rows = document.getElementById('rows');
-  rows.innerHTML = data.map(p => `<tr><td><a href="/employee/payroll/${p.payrollId}">${p.payrollId||''}</a></td><td>${p.month||''}</td><td>${p.year||''}</td><td>${p.grossSalary||''}</td><td>${p.netPay||''}</td><td><span class="badge ${p.status === 'PAID' ? 'bg-success' : 'bg-warning'}">${p.status||''}</span></td><td class="text-end"><a href="/api/v1/payroll/${p.payrollId}/download" class="btn btn-sm btn-outline-danger"><i class="fas fa-file-pdf"></i> Download PDF</a></td></tr>`).join('') || '<tr><td colspan="7">No payroll records</td></tr>';
-});
-</script>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h3><i class="fas fa-building"></i> HR System</h3>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/employee/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li class="menu-label">My Info</li>
+                <li><a href="/employee/profile"><i class="fas fa-user"></i> My Profile</a></li>
+                <li class="menu-label">Attendance & Leave</li>
+                <li><a href="/employee/attendance/clock-inout"><i class="fas fa-clock"></i> Clock In/Out</a></li>
+                <li><a href="/employee/attendance"><i class="fas fa-calendar-check"></i> My Attendance</a></li>
+                <li><a href="/employee/leaves/request"><i class="fas fa-file-alt"></i> Request Leave</a></li>
+                <li><a href="/employee/leaves"><i class="fas fa-history"></i> My Leaves</a></li>
+                <li class="menu-label">Compensation</li>
+                <li><a href="/employee/payroll" class="active"><i class="fas fa-money-bill"></i> My Payroll</a></li>
+                <li class="menu-label">Other</li>
+                <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <nav class="navbar-custom">
+                <div>
+                    <span>My Compensation</span>
+                </div>
+                <div>
+                    <span th:text="${username} ?: 'Employee'"></span>
+                    <i class="fas fa-user-circle" style="font-size: 1.5em; margin-left: 10px;"></i>
+                </div>
+            </nav>
+
+            <div class="content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="h4 mb-1"><i class="fas fa-money-bill-wave text-primary"></i> My Payroll Statements</h2>
+                        <p class="text-muted small mb-0">Browse and download your monthly salary slips and payment records.</p>
+                    </div>
+                    <a class="btn btn-secondary btn-sm" th:href="@{/employee/dashboard}">
+                        <i class="fas fa-arrow-left"></i> Dashboard
+                    </a>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Reference ID</th>
+                                    <th>Pay Period</th>
+                                    <th>Gross Salary</th>
+                                    <th>Overtime Pay</th>
+                                    <th>Deductions</th>
+                                    <th>Net Pay</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rows">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin me-2"></i> Loading payslips...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <p>&copy; 2026 HR Management System. All rights reserved.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        const monthsName = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/v1/auth/me', { headers: { 'Accept': 'application/json' } })
+            .then(r => r.json())
+            .then(async me => {
+                try {
+                    const res = await fetch(`/api/v1/payroll/employee/${me.employeeId}`, { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) {
+                        document.getElementById('rows').innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No payroll records found</td></tr>';
+                        return;
+                    }
+                    const data = await res.json();
+                    const rows = document.getElementById('rows');
+                    
+                    if (data && data.length > 0) {
+                        rows.innerHTML = data.map(p => {
+                            const monthStr = monthsName[p.month] || `Month ${p.month}`;
+                            const grossVal = p.grossSalary != null ? `$${p.grossSalary.toFixed(2)}` : '$0.00';
+                            const overtimeVal = p.overtimePay != null ? `$${p.overtimePay.toFixed(2)}` : '$0.00';
+                            const deductionsVal = p.deductions != null ? `$${p.deductions.toFixed(2)}` : '$0.00';
+                            const netVal = p.netPay != null ? `$${p.netPay.toFixed(2)}` : '$0.00';
+                            const statusColor = p.status === 'PAID' ? 'bg-success' : 'bg-warning';
+
+                            return `<tr>
+                                <td><a href="/employee/payroll/${p.payrollId}" class="fw-semibold text-decoration-none"><i class="fas fa-receipt me-1"></i> ${p.payrollId.substring(0, 8)}...</a></td>
+                                <td>${monthStr} ${p.year}</td>
+                                <td>${grossVal}</td>
+                                <td class="text-success">+ ${overtimeVal}</td>
+                                <td class="text-danger">- ${deductionsVal}</td>
+                                <td class="fw-bold text-primary">${netVal}</td>
+                                <td><span class="badge ${statusColor}">${p.status || 'UNPAID'}</span></td>
+                                <td class="text-end">
+                                    <div class="btn-group gap-1">
+                                        <a href="/employee/payroll/${p.payrollId}" class="btn btn-sm btn-outline-primary py-1 px-2"><i class="fas fa-eye"></i> View</a>
+                                        <a href="/api/v1/payroll/${p.payrollId}/download" class="btn btn-sm btn-outline-danger py-1 px-2"><i class="fas fa-file-pdf"></i> PDF</a>
+                                    </div>
+                                </td>
+                            </tr>`;
+                        }).join('');
+                    } else {
+                        rows.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No payroll records found</td></tr>';
+                    }
+                } catch (e) {
+                    console.error('Error fetching payroll:', e);
+                    document.getElementById('rows').innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Failed to load payroll records</td></tr>';
+                }
+            })
+            .catch(err => {
+                console.error('Auth error:', err);
+                document.getElementById('rows').innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Authentication error</td></tr>';
+            });
+        });
+    </script>
 </body>
 </html>
-
