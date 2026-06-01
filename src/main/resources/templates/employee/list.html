@@ -40,11 +40,47 @@
                 <h2><i class="fas fa-users"></i> Employee List</h2>
                 <p class="text-muted">Manage all employees in the system</p>
 
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Search by name, email, or department..." class="form-control">
-                    <a href="/admin/employees/create" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add Employee
-                    </a>
+                <div class="card p-3 mb-4 shadow-sm border-0">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold small text-muted">Search Text</label>
+                            <input type="text" id="searchInput" placeholder="Search by name or email..." class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold small text-muted">Department</label>
+                            <select id="filterDept" class="form-select">
+                                <option value="">All Departments</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small text-muted">Role</label>
+                            <select id="filterRole" class="form-select">
+                                <option value="">All Roles</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small text-muted">Status</label>
+                            <select id="filterStatus" class="form-select">
+                                <option value="">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <a href="/admin/employees/create" class="btn btn-primary w-100 mb-2">
+                                <i class="fas fa-plus"></i> Add Employee
+                            </a>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-outline-secondary btn-sm w-50" onclick="document.getElementById('csvFileInput').click()">
+                                    <i class="fas fa-file-import"></i> Import
+                                </button>
+                                <button class="btn btn-outline-info btn-sm w-50" onclick="downloadCsvTemplate()">
+                                    <i class="fas fa-download"></i> Template
+                                </button>
+                            </div>
+                            <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleCsvImport(this.files[0])">
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Employees Table -->
@@ -137,16 +173,163 @@
             setTimeout(() => alertDiv.remove(), 5000);
         }
 
-        // Search functionality
-        document.getElementById('searchInput').addEventListener('keyup', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('#employeeTable tr');
+        // Load filter dropdowns
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/v1/department', { headers: { 'Accept': 'application/json' } })
+            .then(res => res.json())
+            .then(data => {
+                const deptSelect = document.getElementById('filterDept');
+                data.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.departmentName;
+                    opt.textContent = d.departmentName;
+                    deptSelect.appendChild(opt);
+                });
+            });
 
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            fetch('/api/v1/role', { headers: { 'Accept': 'application/json' } })
+            .then(res => res.json())
+            .then(data => {
+                const roleSelect = document.getElementById('filterRole');
+                data.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.roleName;
+                    opt.textContent = r.roleName;
+                    roleSelect.appendChild(opt);
+                });
             });
         });
+
+        // Unified Filter Function
+        function filterTable() {
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const deptVal = document.getElementById('filterDept').value;
+            const roleVal = document.getElementById('filterRole').value;
+            const statusVal = document.getElementById('filterStatus').value;
+
+            const rows = document.querySelectorAll('#employeeTable tr');
+            rows.forEach(row => {
+                // Skip rows that don't have proper data cells
+                if (row.cells.length < 6) return;
+
+                const name = row.cells[1].textContent.toLowerCase();
+                const email = row.cells[2].textContent.toLowerCase();
+                const dept = row.cells[3].textContent;
+                const role = row.cells[4].textContent;
+                const status = row.cells[5].textContent.trim();
+
+                const matchesSearch = name.includes(searchVal) || email.includes(searchVal);
+                const matchesDept = !deptVal || dept === deptVal;
+                const matchesRole = !roleVal || role === roleVal;
+                const matchesStatus = !statusVal || status === statusVal;
+
+                if (matchesSearch && matchesDept && matchesRole && matchesStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        document.getElementById('searchInput').addEventListener('keyup', filterTable);
+        document.getElementById('filterDept').addEventListener('change', filterTable);
+        document.getElementById('filterRole').addEventListener('change', filterTable);
+        document.getElementById('filterStatus').addEventListener('change', filterTable);
+
+        function downloadCsvTemplate() {
+            const csvContent = "firstName,lastName,email,username,password,dateOfBirth,departmentId,roleId,employmentType,baseSalary\n" +
+                               "John,Doe,john.doe@example.com,john.doe,Pass123!,1990-05-15,DEPT_UUID_HERE,ROLE_UUID_HERE,FULL_TIME,55000\n" +
+                               "Jane,Smith,jane.smith@example.com,jane.smith,Pass123!,1992-08-20,DEPT_UUID_HERE,ROLE_UUID_HERE,PART_TIME,35000";
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", "employee_import_template.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function handleCsvImport(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                if (lines.length <= 1) {
+                    showNotification('CSV file is empty or missing headers.', 'danger');
+                    return;
+                }
+                
+                const headers = lines[0].split(',').map(h => h.trim());
+                let successCount = 0;
+                let failCount = 0;
+                let errors = [];
+
+                showNotification('Starting bulk import of employees...', 'info');
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    const values = line.split(',').map(v => v.trim());
+                    if (values.length < headers.length) continue;
+                    
+                    const rowObj = {};
+                    headers.forEach((h, idx) => {
+                        rowObj[h] = values[idx];
+                    });
+
+                    const requestData = {
+                        firstName: rowObj.firstName || rowObj.first_name || '',
+                        lastName: rowObj.lastName || rowObj.last_name || '',
+                        email: rowObj.email || '',
+                        username: rowObj.username || '',
+                        password: rowObj.password || 'TempPass123!',
+                        dateOfBirth: rowObj.dateOfBirth || rowObj.dob || '1995-01-01',
+                        departmentId: rowObj.departmentId || rowObj.department_id || '',
+                        roleId: rowObj.roleId || rowObj.role_id || '',
+                        employmentType: rowObj.employmentType || rowObj.employment_type || 'FULL_TIME',
+                        baseSalary: parseFloat(rowObj.baseSalary || rowObj.base_salary || '40000')
+                    };
+
+                    try {
+                        const res = await fetch('/api/v1/employee', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(requestData)
+                        });
+                        if (res.ok) {
+                            successCount++;
+                        } else {
+                            failCount++;
+                            const txt = await res.text();
+                            let errMsg = 'Validation error';
+                            try {
+                                const parsed = JSON.parse(txt);
+                                errMsg = parsed.message || parsed.error || errMsg;
+                            } catch(e) {
+                                errMsg = txt || errMsg;
+                            }
+                            errors.push(`Row ${i+1}: ${errMsg}`);
+                        }
+                    } catch (err) {
+                        failCount++;
+                        errors.push(`Row ${i+1}: Network error`);
+                    }
+                }
+
+                if (successCount > 0) {
+                    showNotification(`Successfully imported ${successCount} employees!`, 'success');
+                    setTimeout(() => location.reload(), 2000);
+                }
+                if (failCount > 0) {
+                    showNotification(`Failed to import ${failCount} employees. Errors: ${errors.slice(0, 2).join('; ')}`, 'danger');
+                }
+                document.getElementById('csvFileInput').value = '';
+            };
+            reader.readAsText(file);
+        }
 
         function logout() {
             if (confirm('Are you sure you want to logout?')) {

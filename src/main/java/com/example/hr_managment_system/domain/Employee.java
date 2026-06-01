@@ -73,6 +73,6 @@ public class Employee {
     @JoinColumn(name = "shift_id", nullable = true)
     private Shift shift;
 
-
-
+    @Column(name = "profile_image_path")
+    private String profileImagePath;
 }

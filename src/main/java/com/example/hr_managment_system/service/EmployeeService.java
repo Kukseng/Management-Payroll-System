@@ -37,6 +37,5 @@ public interface EmployeeService {
 
     void deleteEmployee(String id);
 
-
-
+    EmployeeResponse uploadProfileImage(String id, org.springframework.web.multipart.MultipartFile file);
 }

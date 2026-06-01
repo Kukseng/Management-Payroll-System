@@ -132,9 +132,12 @@
                         </div>
 
                         <!-- Shifts List -->
-                        <div class="card shadow-sm border-0">
-                            <div class="card-header bg-white">
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <h5 class="mb-0 text-primary"><i class="fas fa-list-ul"></i> Shift Schedule Registry</h5>
+                                <div style="max-width: 250px;">
+                                    <input type="text" id="shiftSearchInput" placeholder="Search shift name..." class="form-control form-control-sm">
+                                </div>
                             </div>
                             <div class="table-responsive">
                                 <table class="table mb-0">
@@ -150,6 +153,37 @@
                                         <tr>
                                             <td colspan="4" class="text-center text-muted py-4">
                                                 <i class="fas fa-spinner fa-spin me-2"></i> Querying shifts...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Shift Assignments List -->
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h5 class="mb-0 text-success"><i class="fas fa-users-cog"></i> Current Shift Assignments</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text" id="assignSearchInput" placeholder="Search employee..." class="form-control form-control-sm" style="max-width: 180px;">
+                                    <select id="assignShiftFilter" class="form-select form-select-sm" style="max-width: 180px;">
+                                        <option value="">All Shifts</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table mb-0 align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Department</th>
+                                            <th>Assigned Shift</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="assignmentRows">
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-4">
+                                                <i class="fas fa-spinner fa-spin me-2"></i> Querying assignments...
                                             </td>
                                         </tr>
                                     </tbody>
@@ -223,6 +257,9 @@
                     rows.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No shift configurations defined.</td></tr>';
                     select.innerHTML = '<option value="" disabled selected>No shifts defined</option>';
                 }
+                
+                // Load assignments after shifts are loaded
+                loadAssignments();
             } catch (err) {
                 console.error(err);
                 rows.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4">Failed to load shifts.</td></tr>';
@@ -249,16 +286,117 @@
             }
         }
 
+        async function loadAssignments() {
+            const tbody = document.getElementById('assignmentRows');
+            const assignShiftFilter = document.getElementById('assignShiftFilter');
+            try {
+                const res = await fetch('/api/v1/employee?isActive=true', { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error();
+                const employees = await res.json();
+
+                tbody.innerHTML = employees.map(emp => {
+                    const shiftVal = emp.shiftName || '<span class="text-muted">None Assigned</span>';
+                    const badgeClass = emp.shiftName ? 'bg-success' : 'bg-secondary';
+                    return `<tr>
+                        <td><strong>${emp.firstName} ${emp.lastName}</strong> <span class="text-muted small">(ID: ${emp.employeeId})</span></td>
+                        <td>${emp.departmentName || '-'}</td>
+                        <td><span class="badge ${badgeClass}">${shiftVal}</span></td>
+                    </tr>`;
+                }).join('');
+
+                // Populate filter options dynamically from loaded shifts
+                const currentFilterVal = assignShiftFilter.value;
+                assignShiftFilter.innerHTML = '<option value="">All Shifts</option>';
+                if (shiftsList && shiftsList.length > 0) {
+                    shiftsList.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.name;
+                        opt.textContent = s.name;
+                        assignShiftFilter.appendChild(opt);
+                    });
+                }
+                assignShiftFilter.value = currentFilterVal;
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Failed to load assignments.</td></tr>';
+            }
+        }
+
+        // Live filtering for shifts list
+        document.getElementById('shiftSearchInput').addEventListener('keyup', function(e) {
+            const val = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#shiftRows tr');
+            rows.forEach(row => {
+                if (row.cells.length < 4) return;
+                const name = row.cells[0].textContent.toLowerCase();
+                row.style.display = name.includes(val) ? '' : 'none';
+            });
+        });
+
+        // Live filtering for assignments list
+        function filterAssignments() {
+            const searchVal = document.getElementById('assignSearchInput').value.toLowerCase();
+            const shiftVal = document.getElementById('assignShiftFilter').value;
+
+            const rows = document.querySelectorAll('#assignmentRows tr');
+            rows.forEach(row => {
+                if (row.cells.length < 3) return;
+                const empName = row.cells[0].textContent.toLowerCase();
+                const shiftName = row.cells[2].textContent.trim();
+
+                const matchesSearch = empName.includes(searchVal);
+                const matchesShift = !shiftVal || shiftName === shiftVal;
+
+                if (matchesSearch && matchesShift) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        document.getElementById('assignSearchInput').addEventListener('keyup', filterAssignments);
+        document.getElementById('assignShiftFilter').addEventListener('change', filterAssignments);
+
+        function showNotification(message, type = 'success') {
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                container.style.zIndex = '9999';
+                document.body.appendChild(container);
+            }
+            const bgClass = type === 'success' ? 'bg-success text-white' : type === 'danger' ? 'bg-danger text-white' : 'bg-warning text-dark';
+            const iconClass = type === 'success' ? 'fa-check-circle' : type === 'danger' ? 'fa-exclamation-circle' : 'fa-exclamation-triangle';
+            
+            const toastEl = document.createElement('div');
+            toastEl.className = `toast align-items-center border-0 ${bgClass} shadow-lg mb-2`;
+            toastEl.role = 'alert';
+            toastEl.ariaLive = 'assertive';
+            toastEl.ariaAtomic = 'true';
+            toastEl.innerHTML = `
+                <div class="d-flex py-1">
+                    <div class="toast-body d-flex align-items-center">
+                        <i class="fas ${iconClass} me-2" style="font-size: 1.2rem;"></i>
+                        <span class="fw-semibold">${message}</span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            container.appendChild(toastEl);
+            const bsToast = new bootstrap.Toast(toastEl, { delay: 4000 });
+            bsToast.show();
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+
         async function handleCreateShift(e) {
             e.preventDefault();
-            const msg = document.getElementById('createMsg');
             const name = document.getElementById('shiftName').value.trim();
             const start = document.getElementById('startTime').value;
             const end = document.getElementById('endTime').value;
             const grace = parseInt(document.getElementById('gracePeriod').value);
 
             try {
-                // Formatting time as "HH:mm:ss" for LocalTime mapping
                 const res = await fetch('/api/v1/shifts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -271,22 +409,21 @@
                 });
 
                 if (res.ok) {
-                    msg.innerHTML = '<div class="alert alert-success py-2 px-3 small"><i class="fas fa-check-circle me-1"></i> Shift plan saved!</div>';
+                    showNotification('Shift plan created successfully!', 'success');
                     document.getElementById('createShiftForm').reset();
                     loadShifts();
                 } else {
                     const err = await res.text();
-                    msg.innerHTML = `<div class="alert alert-danger py-2 px-3 small"><i class="fas fa-exclamation-circle me-1"></i> ${err || 'Failed to save shift'}</div>`;
+                    showNotification(err || 'Failed to save shift', 'danger');
                 }
             } catch (error) {
                 console.error(error);
-                msg.innerHTML = '<div class="alert alert-danger py-2 px-3 small"><i class="fas fa-exclamation-circle me-1"></i> Network error saving shift.</div>';
+                showNotification('Network error saving shift.', 'danger');
             }
         }
 
         async function handleAssignShift(e) {
             e.preventDefault();
-            const msg = document.getElementById('assignMsg');
             const employeeId = document.getElementById('employeeSelect').value;
             const shiftId = document.getElementById('shiftSelect').value;
 
@@ -296,15 +433,16 @@
                 });
 
                 if (res.ok) {
-                    msg.innerHTML = '<div class="alert alert-success py-2 px-3 small"><i class="fas fa-check-circle me-1"></i> Shift assigned successfully!</div>';
+                    showNotification('Shift assigned successfully!', 'success');
                     document.getElementById('assignShiftForm').reset();
+                    loadAssignments();
                 } else {
                     const err = await res.text();
-                    msg.innerHTML = `<div class="alert alert-danger py-2 px-3 small"><i class="fas fa-exclamation-circle me-1"></i> ${err || 'Failed to assign shift'}</div>`;
+                    showNotification(err || 'Failed to assign shift', 'danger');
                 }
             } catch (error) {
                 console.error(error);
-                msg.innerHTML = '<div class="alert alert-danger py-2 px-3 small"><i class="fas fa-exclamation-circle me-1"></i> Network error assigning shift.</div>';
+                showNotification('Network error assigning shift.', 'danger');
             }
         }
 

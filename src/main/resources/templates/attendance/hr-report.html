@@ -79,11 +79,23 @@
 
                 <!-- Data Card -->
                 <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <h5 class="mb-0 text-primary"><i class="fas fa-list-ul"></i> Audit Trail Records</h5>
+                        <div class="d-flex gap-2">
+                            <input type="text" id="attSearchInput" placeholder="Filter Employee ID..." class="form-control form-control-sm" style="max-width: 180px;">
+                            <select id="attStatusFilter" class="form-select form-select-sm" style="max-width: 140px;">
+                                <option value="">All Statuses</option>
+                                <option value="PRESENT">PRESENT</option>
+                                <option value="LATE">LATE</option>
+                                <option value="ABSENT">ABSENT</option>
+                            </select>
+                            <button class="btn btn-sm btn-outline-success" onclick="exportTableToCsv('attendanceTable', 'hr_attendance_report.csv')">
+                                <i class="fas fa-file-excel"></i> Export
+                            </button>
+                        </div>
                     </div>
                     <div class="table-responsive">
-                        <table class="table mb-0">
+                        <table class="table mb-0" id="attendanceTable">
                             <thead>
                                 <tr>
                                     <th>Ref ID</th>
@@ -244,6 +256,67 @@
                 console.error(err);
                 rows.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Failed to load attendance report.</td></tr>';
             }
+        }
+
+        function filterAttendanceTable() {
+            const searchVal = document.getElementById('attSearchInput').value.toLowerCase();
+            const statusVal = document.getElementById('attStatusFilter').value;
+
+            const rows = document.querySelectorAll('#rows tr');
+            rows.forEach(row => {
+                if (row.cells.length < 6) return;
+                const empId = row.cells[1].textContent.toLowerCase();
+                const status = row.cells[5].textContent.trim();
+
+                const matchesSearch = empId.includes(searchVal);
+                const matchesStatus = !statusVal || status === statusVal;
+
+                if (matchesSearch && matchesStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        document.getElementById('attSearchInput').addEventListener('keyup', filterAttendanceTable);
+        document.getElementById('attStatusFilter').addEventListener('change', filterAttendanceTable);
+
+        function exportTableToCsv(tableId, filename = 'export.csv') {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            let csv = [];
+            const headers = Array.from(table.querySelectorAll('thead th'))
+                .map(th => `"${th.textContent.trim().replace(/"/g, '""')}"`);
+            csv.push(headers.join(','));
+            
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                if (row.style.display === 'none') return;
+                if (row.cells.length <= 1 && row.cells[0].colSpan > 1) return;
+                
+                const cols = Array.from(row.cells).map(cell => {
+                    let text = cell.textContent.trim().replace(/\s+/g, ' ');
+                    const buttons = cell.querySelectorAll('.btn');
+                    if (buttons.length > 0) {
+                        text = '';
+                    }
+                    return `"${text.replace(/"/g, '""')}"`;
+                });
+                
+                if (headers[headers.length - 1].toLowerCase().includes('action')) {
+                    cols.pop();
+                }
+                csv.push(cols.join(','));
+            });
+            
+            const blob = new Blob([csv.join("\n")], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>

@@ -88,5 +88,12 @@ public class HRDashboardViewController {
         model.addAttribute("role", "MANAGER");
         return "shift/manage";
     }
+
+    // Holiday Management
+    @GetMapping("/holidays")
+    public String manageHolidays(Model model) {
+        model.addAttribute("role", "MANAGER");
+        return "holiday/manage";
+    }
 }
 

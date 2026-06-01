@@ -49,21 +49,35 @@
                     <p>Manage your attendance, leave, and view your payroll information</p>
                 </div>
 
-                <!-- Quick Actions -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5><i class="fas fa-flash"></i> Quick Actions</h5>
+                <!-- Quick Actions & Holidays -->
+                <div class="row mb-4">
+                    <div class="col-md-7">
+                        <div class="card h-100 mb-0">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0 fw-bold"><i class="fas fa-bolt text-warning"></i> Quick Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <a href="/employee/attendance/clock-inout" class="btn btn-success btn-sm clock-button me-2 mb-2">
+                                    <i class="fas fa-clock"></i> Clock In / Out
+                                </a>
+                                <a href="/employee/leaves/request" class="btn btn-primary btn-sm clock-button me-2 mb-2">
+                                    <i class="fas fa-file-alt"></i> Request Leave
+                                </a>
+                                <a href="/employee/payroll" class="btn btn-info btn-sm clock-button mb-2">
+                                    <i class="fas fa-money-bill"></i> View Payroll
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <a href="/employee/attendance/clock-inout" class="btn btn-success btn-sm clock-button">
-                            <i class="fas fa-clock"></i> Clock In / Out
-                        </a>
-                        <a href="/employee/leaves/request" class="btn btn-primary btn-sm clock-button">
-                            <i class="fas fa-file-alt"></i> Request Leave
-                        </a>
-                        <a href="/employee/payroll" class="btn btn-info btn-sm clock-button">
-                            <i class="fas fa-money-bill"></i> View Payroll
-                        </a>
+                    <div class="col-md-5">
+                        <div class="card h-100 mb-0">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0 fw-bold"><i class="fas fa-calendar-day text-danger"></i> Holidays this Month</h5>
+                            </div>
+                            <div class="card-body" id="holidayCardBody" style="max-height: 150px; overflow-y: auto;">
+                                <div class="text-center text-muted py-2 small">Loading holidays...</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -298,6 +312,40 @@
                     }
                 })
                 .catch(err => console.error('Error loading leaves:', err));
+
+                // 4. Fetch holidays for the current month
+                fetch('/api/v1/holiday/current-month')
+                .then(res => res.json())
+                .then(holidays => {
+                    const container = document.getElementById('holidayCardBody');
+                    container.innerHTML = '';
+                    if (holidays && holidays.length > 0) {
+                        holidays.forEach(h => {
+                            const date = safeParseDate(h.holidayDate);
+                            const dayName = date ? date.toLocaleDateString([], { weekday: 'long' }) : '';
+                            const dateStr = formatDate(h.holidayDate);
+                            const item = `
+                                <div class="d-flex justify-content-between align-items-start border-bottom pb-2 mb-2" style="border-color: #f1f5f9 !important;">
+                                    <div>
+                                        <div class="fw-bold small text-dark">${h.holidayName}</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">${h.description || ''}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-light text-danger border border-danger-subtle">${dateStr}</span>
+                                        <div class="text-muted small" style="font-size: 0.7rem;">${dayName}</div>
+                                    </div>
+                                </div>
+                            `;
+                            container.innerHTML += item;
+                        });
+                    } else {
+                        container.innerHTML = '<div class="text-center text-muted py-3 small">No holidays this month</div>';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading holidays:', err);
+                    document.getElementById('holidayCardBody').innerHTML = '<div class="text-center text-danger py-3 small">Failed to load holidays</div>';
+                });
 
             } catch (err) {
                 console.error('Error initializing dashboard data:', err);

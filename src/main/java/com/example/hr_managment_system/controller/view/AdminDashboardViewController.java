@@ -35,7 +35,10 @@ public class AdminDashboardViewController {
     @GetMapping("/employees")
     public String listEmployees(Model model) {
         try {
-            model.addAttribute("employees", employeeService.getAllEmployees(true));
+            java.util.List<com.example.hr_managment_system.dto.Employee.EmployeeResponse> all = new java.util.ArrayList<>();
+            all.addAll(employeeService.getAllEmployees(true));
+            all.addAll(employeeService.getAllEmployees(false));
+            model.addAttribute("employees", all);
             model.addAttribute("role", "ADMIN");
         } catch (Exception e) {
             model.addAttribute("error", "Unable to load employees");
@@ -76,6 +79,13 @@ public class AdminDashboardViewController {
     public String manageDepartments(Model model) {
         model.addAttribute("role", "ADMIN");
         return "department/manage";
+    }
+
+    // Holiday Management
+    @GetMapping("/holidays")
+    public String manageHolidays(Model model) {
+        model.addAttribute("role", "ADMIN");
+        return "holiday/manage";
     }
 
     // Attendance Reports

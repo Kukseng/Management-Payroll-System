@@ -56,6 +56,10 @@ public class DepartmentInitialize {
                 existingDepartment.setGeofenceRadiusMeters(defaultGeofenceRadiusMeters);
                 updated = true;
             }
+            if (existingDepartment.getIsActive() == null) {
+                existingDepartment.setIsActive(true);
+                updated = true;
+            }
             if (updated) {
                 departmentRepository.save(existingDepartment);
             }
@@ -68,6 +72,7 @@ public class DepartmentInitialize {
         department.setOfficeLatitude(defaultOfficeLatitude);
         department.setOfficeLongitude(defaultOfficeLongitude);
         department.setGeofenceRadiusMeters(defaultGeofenceRadiusMeters);
+        department.setIsActive(true);
         missingDepartments.add(department);
     }
 

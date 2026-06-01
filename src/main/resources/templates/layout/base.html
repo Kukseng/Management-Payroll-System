@@ -24,6 +24,7 @@
                 <li><a th:href="@{/admin/attendance}" th:classappend="${#request.requestURI.contains('/attendance') ? 'active' : ''}"><i class="fas fa-clock"></i> Attendance</a></li>
                 <li><a th:href="@{/admin/payroll}" th:classappend="${#request.requestURI.contains('/payroll') ? 'active' : ''}"><i class="fas fa-money-bill"></i> Payroll</a></li>
                 <li><a th:href="@{/admin/shifts}" th:classappend="${#request.requestURI.contains('/shifts') ? 'active' : ''}"><i class="fas fa-calendar-alt"></i> Shifts</a></li>
+                <li><a th:href="@{/admin/holidays}" th:classappend="${#request.requestURI.contains('/holidays') ? 'active' : ''}"><i class="fas fa-calendar-day"></i> Holidays</a></li>
                 <li class="menu-label">Other</li>
                 <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -34,6 +35,7 @@
                 <li><a th:href="@{/hr/attendance}" th:classappend="${#request.requestURI.contains('/attendance') ? 'active' : ''}"><i class="fas fa-clock"></i> Attendance Report</a></li>
                 <li><a th:href="@{/hr/payroll}" th:classappend="${#request.requestURI.contains('/payroll') ? 'active' : ''}"><i class="fas fa-money-bill"></i> Payroll</a></li>
                 <li><a th:href="@{/hr/shifts}" th:classappend="${#request.requestURI.contains('/shifts') ? 'active' : ''}"><i class="fas fa-calendar-alt"></i> Shifts</a></li>
+                <li><a th:href="@{/hr/holidays}" th:classappend="${#request.requestURI.contains('/holidays') ? 'active' : ''}"><i class="fas fa-calendar-day"></i> Holidays</a></li>
                 <li class="menu-label">Other</li>
                 <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -143,18 +145,39 @@
         };
 
         function showNotification(message, type = 'success') {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.role = 'alert';
-            alertDiv.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                container.style.zIndex = '9999';
+                document.body.appendChild(container);
+            }
+            
+            const bgClass = type === 'success' ? 'bg-success text-white' : type === 'danger' ? 'bg-danger text-white' : type === 'info' ? 'bg-info text-white' : 'bg-warning text-dark';
+            const iconClass = type === 'success' ? 'fa-check-circle' : type === 'danger' ? 'fa-exclamation-circle' : type === 'info' ? 'fa-info-circle' : 'fa-exclamation-triangle';
+            
+            const toastEl = document.createElement('div');
+            toastEl.className = `toast align-items-center border-0 ${bgClass} shadow-lg mb-2`;
+            toastEl.role = 'alert';
+            toastEl.ariaLive = 'assertive';
+            toastEl.ariaAtomic = 'true';
+            toastEl.innerHTML = `
+                <div class="d-flex py-1">
+                    <div class="toast-body d-flex align-items-center">
+                        <i class="fas ${iconClass} me-2" style="font-size: 1.2rem;"></i>
+                        <span class="fw-semibold">${message}</span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
             `;
-
-            const contentArea = document.querySelector('.content');
-            contentArea.insertBefore(alertDiv, contentArea.firstChild);
-
-            setTimeout(() => alertDiv.remove(), 5000);
+            
+            container.appendChild(toastEl);
+            const bsToast = new bootstrap.Toast(toastEl, { delay: 4000 });
+            bsToast.show();
+            
+            toastEl.addEventListener('hidden.bs.toast', () => {
+                toastEl.remove();
+            });
         }
 
         // Activate menu items

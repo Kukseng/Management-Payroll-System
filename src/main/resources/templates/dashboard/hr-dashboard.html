@@ -22,6 +22,7 @@
                 <li><a href="/hr/attendance"><i class="fas fa-clock"></i> Attendance Report</a></li>
                 <li><a href="/hr/payroll"><i class="fas fa-money-bill"></i> Payroll</a></li>
                 <li><a href="/hr/shifts"><i class="fas fa-calendar-alt"></i> Shifts</a></li>
+                <li><a href="/hr/holidays"><i class="fas fa-calendar-day"></i> Holidays</a></li>
                 <li class="menu-label">Other</li>
                 <li><a href="javascript:logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -81,7 +82,7 @@
 
                 <!-- Charts Row -->
                 <div class="row mb-4">
-                    <div class="col-md-7">
+                    <div class="col-md-6">
                         <div class="card shadow-sm h-100">
                             <div class="card-header bg-white border-0 py-3">
                                 <h5 class="card-title mb-0 fw-bold"><i class="fas fa-chart-bar text-primary"></i> Attendance Status (Last 7 Days)</h5>
@@ -91,13 +92,23 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-md-3">
                         <div class="card shadow-sm h-100">
                             <div class="card-header bg-white border-0 py-3">
                                 <h5 class="card-title mb-0 fw-bold"><i class="fas fa-chart-pie text-primary"></i> Leaves by Status</h5>
                             </div>
                             <div class="card-body d-flex align-items-center justify-content-center">
                                 <canvas id="leaveStatusChart" style="max-height: 220px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="card-title mb-0 fw-bold"><i class="fas fa-chart-pie text-secondary"></i> Leaves by Type</h5>
+                            </div>
+                            <div class="card-body d-flex align-items-center justify-content-center">
+                                <canvas id="leaveTypeChart" style="max-height: 220px;"></canvas>
                             </div>
                         </div>
                     </div>
@@ -261,17 +272,41 @@
         fetch('/api/v1/analytics/leaves')
         .then(r => r.json())
         .then(data => {
+            // Leaves by Status
             const statuses = data.byStatus || {};
-            const labels = Object.keys(statuses);
-            const values = Object.values(statuses);
+            const statusLabels = Object.keys(statuses);
+            const statusValues = Object.values(statuses);
             
             new Chart(document.getElementById('leaveStatusChart'), {
                 type: 'doughnut',
                 data: {
-                    labels: labels,
+                    labels: statusLabels,
                     datasets: [{
-                        data: values,
+                        data: statusValues,
                         backgroundColor: ['#f59e0b', '#10b981', '#f43f5e']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // Leaves by Type
+            const types = data.byType || {};
+            const typeLabels = Object.keys(types);
+            const typeValues = Object.values(types);
+            
+            new Chart(document.getElementById('leaveTypeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: typeLabels,
+                    datasets: [{
+                        data: typeValues,
+                        backgroundColor: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#f43f5e']
                     }]
                 },
                 options: {

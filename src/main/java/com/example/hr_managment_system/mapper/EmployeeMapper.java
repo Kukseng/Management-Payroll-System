@@ -19,6 +19,8 @@ public interface EmployeeMapper {
     @Mapping(source = "department.departmentName", target = "departmentName")
     @Mapping(source = "role.roleId", target = "roleId")
     @Mapping(source = "role.roleName", target = "roleName")
+    @Mapping(source = "shift.shiftId", target = "shiftId")
+    @Mapping(source = "shift.name", target = "shiftName")
     EmployeeResponse employeeToEmployeeResponse(Employee employee);
 
     Employee employeeRequestToEmployee(EmployeeRequest employeeRequest);

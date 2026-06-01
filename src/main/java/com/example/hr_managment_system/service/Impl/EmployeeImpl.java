@@ -24,6 +24,13 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -167,5 +174,54 @@ public class EmployeeImpl implements EmployeeService {
 
         employee.setIsActive(false);
         employeeRepository.save(employee);
+    }
+
+    @Override
+    public EmployeeResponse uploadProfileImage(String id, MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty");
+        }
+
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+
+        try {
+            // Ensure directory exists
+            String uploadDir = "uploads/profile-images/";
+            File dir = new File(uploadDir);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            // Clean original filename & make it unique
+            String originalFilename = file.getOriginalFilename();
+            String fileExtension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+            // Restrict file extensions to images only for security
+            if (!List.of(".jpg", ".jpeg", ".png", ".gif", ".webp").contains(fileExtension.toLowerCase())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only image files (.jpg, .jpeg, .png, .gif, .webp) are allowed.");
+            }
+
+            String savedFilename = id + "_" + UUID.randomUUID().toString() + fileExtension;
+            Path targetPath = Paths.get(uploadDir + savedFilename);
+            Files.copy(file.getInputStream(), targetPath);
+
+            // Delete old profile image if exists
+            if (employee.getProfileImagePath() != null) {
+                try {
+                    Files.deleteIfExists(Paths.get(employee.getProfileImagePath()));
+                } catch (IOException e) {
+                    // Log warning and proceed
+                }
+            }
+
+            employee.setProfileImagePath(targetPath.toString());
+            Employee saved = employeeRepository.save(employee);
+            return employeeMapper.employeeToEmployeeResponse(saved);
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to upload profile image");
+        }
     }
 }

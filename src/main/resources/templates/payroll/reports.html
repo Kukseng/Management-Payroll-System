@@ -105,12 +105,17 @@
                     <!-- Details History Table -->
                     <div class="col-12">
                         <div class="card shadow-sm border-0">
-                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <h5 class="mb-0 text-primary"><i class="fas fa-list"></i> Payroll History Log</h5>
-                                <span id="auditTargetName" class="badge bg-info">Select department above</span>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <span id="auditTargetName" class="badge bg-info">Select department above</span>
+                                    <button class="btn btn-sm btn-outline-success" onclick="exportTableToCsv('payrollTable', 'payroll_report.csv')">
+                                        <i class="fas fa-file-excel"></i> Export CSV
+                                    </button>
+                                </div>
                             </div>
                             <div class="table-responsive">
-                                <table class="table mb-0">
+                                <table class="table mb-0" id="payrollTable">
                                     <thead>
                                         <tr>
                                             <th>Reference ID</th>
@@ -253,31 +258,34 @@
         }
 
         function showNotification(message, type = 'success') {
-            const existingAlert = document.getElementById('payrollAlertBanner');
-            if (existingAlert) existingAlert.remove();
-
-            const alertDiv = document.createElement('div');
-            alertDiv.id = 'payrollAlertBanner';
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show border-0 shadow-sm mb-4`;
-            alertDiv.role = 'alert';
-            alertDiv.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
-                    <div>${message}</div>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                container.style.zIndex = '9999';
+                document.body.appendChild(container);
+            }
+            const bgClass = type === 'success' ? 'bg-success text-white' : type === 'danger' ? 'bg-danger text-white' : 'bg-warning text-dark';
+            const iconClass = type === 'success' ? 'fa-check-circle' : type === 'danger' ? 'fa-exclamation-circle' : 'fa-exclamation-triangle';
+            
+            const toastEl = document.createElement('div');
+            toastEl.className = `toast align-items-center border-0 ${bgClass} shadow-lg mb-2`;
+            toastEl.role = 'alert';
+            toastEl.ariaLive = 'assertive';
+            toastEl.ariaAtomic = 'true';
+            toastEl.innerHTML = `
+                <div class="d-flex py-1">
+                    <div class="toast-body d-flex align-items-center">
+                        <i class="fas ${iconClass} me-2" style="font-size: 1.2rem;"></i>
+                        <span class="fw-semibold">${message}</span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
             `;
-
-            const container = document.querySelector('.content');
-            container.insertBefore(alertDiv, container.firstChild);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            setTimeout(() => {
-                if (document.getElementById('payrollAlertBanner')) {
-                    alertDiv.classList.remove('show');
-                    setTimeout(() => alertDiv.remove(), 150);
-                }
-            }, 6000);
+            container.appendChild(toastEl);
+            const bsToast = new bootstrap.Toast(toastEl, { delay: 4000 });
+            bsToast.show();
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
         }
 
         async function approvePayroll(uuid) {
@@ -297,6 +305,44 @@
                 console.error(err);
                 showNotification('Network error authorizing payroll.', 'danger');
             }
+        }
+
+        function exportTableToCsv(tableId, filename = 'export.csv') {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            let csv = [];
+            const headers = Array.from(table.querySelectorAll('thead th'))
+                .map(th => `"${th.textContent.trim().replace(/"/g, '""')}"`);
+            csv.push(headers.join(','));
+            
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                if (row.style.display === 'none') return;
+                if (row.cells.length <= 1 && row.cells[0].colSpan > 1) return;
+                
+                const cols = Array.from(row.cells).map(cell => {
+                    let text = cell.textContent.trim().replace(/\s+/g, ' ');
+                    const buttons = cell.querySelectorAll('.btn');
+                    if (buttons.length > 0) {
+                        text = '';
+                    }
+                    return `"${text.replace(/"/g, '""')}"`;
+                });
+                
+                if (headers[headers.length - 1].toLowerCase().includes('action')) {
+                    cols.pop();
+                }
+                csv.push(cols.join(','));
+            });
+            
+            const blob = new Blob([csv.join("\n")], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>

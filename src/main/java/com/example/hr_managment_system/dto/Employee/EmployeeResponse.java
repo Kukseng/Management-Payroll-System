@@ -20,7 +20,10 @@ public record EmployeeResponse(
         Double baseSalary,
         java.time.LocalDate dateOfBirth,
         LocalDateTime createdAt,
-        boolean isActive
+        boolean isActive,
+        String shiftId,
+        String shiftName,
+        String profileImagePath
 ) {
 
 

@@ -37,7 +37,7 @@ public class Department {
     private Double geofenceRadiusMeters;
 
     @Column (name = "is_active")
-    private Boolean isActive;
+    private Boolean isActive = true;
 
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "department_id")

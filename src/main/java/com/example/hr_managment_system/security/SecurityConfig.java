@@ -84,6 +84,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/v1/analytics/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers("/api/v1/employee/*/documents/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
+                        .requestMatchers("/api/v1/employee/*/profile-image").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
                         .requestMatchers(HttpMethod.POST, "/api/v1/employee/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/employee/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/employee/**").hasRole("ADMIN")
@@ -92,6 +93,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/department/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/department/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/department/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/holiday/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/holiday/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/holiday/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/role/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/v1/payroll/process").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/payroll/*/approve").hasAnyRole("ADMIN", "MANAGER")
