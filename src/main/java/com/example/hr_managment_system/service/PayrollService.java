@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface PayrollService {
     String processPayroll(PayrollRequest payrollRequest);
+    String processPayrollBatch(com.example.hr_managment_system.dto.Payroll.PayrollBatchRequest batchRequest);
     PayrollResponse getPayslipByEmployeeIdAndMonth(String employeeId, Integer month, Integer year);
     List<PayrollResponse> getPayrollByEmployeeId(String employeeId);
 

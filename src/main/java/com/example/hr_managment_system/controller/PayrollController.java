@@ -47,6 +47,12 @@ public class PayrollController {
         return payrollService.processPayroll(payrollRequest);
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/process/batch")
+    public String processPayrollBatch(@RequestBody com.example.hr_managment_system.dto.Payroll.PayrollBatchRequest batchRequest) {
+        return payrollService.processPayrollBatch(batchRequest);
+    }
+
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/{uuid}")
     public PayrollResponse getPayrollByUuid(@PathVariable String uuid) {

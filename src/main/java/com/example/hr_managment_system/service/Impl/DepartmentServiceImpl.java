@@ -35,6 +35,10 @@ public class DepartmentServiceImpl implements DepartmentService {
                     () -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
                             "Manager employee with ID " + departmentRequest.managerId().getEmployeeId() + " not found")
             );
+            if (departmentRepository.existsByManagerId(manager)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Employee " + manager.getFirstName() + " " + manager.getLastName() + " is already assigned as a manager of another department.");
+            }
         }
         department.setManagerId(manager);
 
@@ -67,6 +71,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found"));
         department.setIsActive(false);
+        department.setManagerId(null);
         departmentRepository.save(department);
     }
 
@@ -75,6 +80,41 @@ public class DepartmentServiceImpl implements DepartmentService {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found"));
         department.setIsActive(true);
+        Department saved = departmentRepository.save(department);
+        return mapToResponse(saved);
+    }
+
+    @Override
+    public DepartmentResponse updateDepartment(String id, DepartmentRequest departmentRequest) {
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found"));
+
+        if (!department.getDepartmentName().trim().equalsIgnoreCase(departmentRequest.DepartmentName().trim())) {
+            if (departmentRepository.existsByDepartmentName(departmentRequest.DepartmentName())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Department name already exists");
+            }
+        }
+        department.setDepartmentName(departmentRequest.DepartmentName());
+
+        Employee manager = null;
+        if (departmentRequest.managerId() != null && departmentRequest.managerId().getEmployeeId() != null) {
+            manager = employeeRepository.findById(departmentRequest.managerId().getEmployeeId()).orElseThrow(
+                    () -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
+                            "Manager employee with ID " + departmentRequest.managerId().getEmployeeId() + " not found")
+            );
+            Department existingDept = departmentRepository.findByManagerId(manager).orElse(null);
+            if (existingDept != null && !existingDept.getDepartmentId().equals(id)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Employee " + manager.getFirstName() + " " + manager.getLastName() + " is already assigned as a manager of another department.");
+            }
+        }
+        department.setManagerId(manager);
+
+        department.setQrCode(departmentRequest.qrCode());
+        department.setOfficeLatitude(departmentRequest.officeLatitude());
+        department.setOfficeLongitude(departmentRequest.officeLongitude());
+        department.setGeofenceRadiusMeters(departmentRequest.geofenceRadiusMeters());
+
         Department saved = departmentRepository.save(department);
         return mapToResponse(saved);
     }

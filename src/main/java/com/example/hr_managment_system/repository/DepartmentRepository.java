@@ -12,4 +12,8 @@ public interface DepartmentRepository extends JpaRepository<Department, String> 
 //    boolean existsByDepartmentId(String departmentId);
 
     Optional<Department> findByDepartmentName(String departmentName);
+
+    boolean existsByManagerId(com.example.hr_managment_system.domain.Employee manager);
+
+    Optional<Department> findByManagerId(com.example.hr_managment_system.domain.Employee manager);
 }

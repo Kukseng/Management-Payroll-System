@@ -65,7 +65,7 @@
                             <div class="col-md-6"><label class="form-label fw-semibold">Employee ID</label><input class="form-control" id="employeeId" placeholder="emp-id" readonly></div>
                             <div class="col-md-6"><label class="form-label fw-semibold">Department</label><select class="form-select" id="departmentId"><option value="">Select Department...</option></select></div>
                             <div class="col-md-6"><label class="form-label fw-semibold">QR Code</label><input class="form-control" id="qrCode" placeholder="QR-..."></div>
-                            <div class="col-md-6"><label class="form-label fw-semibold">Status</label><select class="form-select" id="status"><option>PRESENT</option><option>LATE</option><option>None</option><option>ABSENT</option></select></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">Status</label><input class="form-control bg-white text-muted" id="status" value="Auto-calculated (Present/Late)" readonly></div>
                             <div class="col-md-6"><label class="form-label fw-semibold">Latitude In</label><input class="form-control" type="number" step="any" id="latitudeIn"></div>
                             <div class="col-md-6"><label class="form-label fw-semibold">Longitude In</label><input class="form-control" type="number" step="any" id="longitudeIn"></div>
                             <div class="col-md-6"><label class="form-label fw-semibold">Latitude Out</label><input class="form-control" type="number" step="any" id="latitudeOut"></div>
@@ -96,6 +96,30 @@
             </footer>
         </div>
     </div>
+
+    <!-- Clock In/Out Result Modal -->
+    <div class="modal fade" id="clockResultModal" tabindex="-1" aria-labelledby="clockResultModalLabel" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header border-0 bg-light justify-content-center pt-4">
+                    <h5 class="modal-title fw-bold fs-4 text-center w-100" id="clockResultModalLabel">Attendance Status</h5>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div class="mb-3">
+                        <i id="clockResultIcon" class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 id="clockResultTitle" class="fw-bold mb-3">Successfully Clocked In</h4>
+                    <div class="bg-light p-3 rounded-3 mb-3 text-start border" id="clockResultDetails" style="font-size: 0.95rem; color: #334155;">
+                        <!-- Dynamically filled details -->
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light justify-content-center pb-4">
+                    <button type="button" class="btn btn-primary px-5 rounded-pill py-2" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <script>
 let allDepartments = [];
 let clockMap, userMarker, officeMarker, geofenceCircle;
@@ -475,7 +499,7 @@ async function submitClock(type) {
     longitudeIn: parseFloat(document.getElementById('longitudeIn').value) || 0.0,
     latitudeOut: document.getElementById('latitudeOut').value ? parseFloat(document.getElementById('latitudeOut').value) : null,
     longitudeOut: document.getElementById('longitudeOut').value ? parseFloat(document.getElementById('longitudeOut').value) : null,
-    status: document.getElementById('status').value || 'PRESENT'
+    status: 'PRESENT'
   };
 
   try {
@@ -486,16 +510,47 @@ async function submitClock(type) {
     });
 
     if (res.ok) {
-      msg.innerHTML = '<div class="alert alert-success">Attendance saved successfully!</div>';
+      const data = await res.json();
       await checkAttendanceStatus();
+      
+      let detailsHtml = '';
+      if (type === 'clock-in') {
+        const timeObj = safeParseDate(data.clockIn);
+        const timeStr = timeObj ? timeObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : 'N/A';
+        const dateStr = timeObj ? timeObj.toLocaleDateString([], {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) : 'N/A';
+        const statusBadge = data.status === 'LATE' 
+          ? '<span class="badge bg-danger">LATE</span>' 
+          : '<span class="badge bg-success">PRESENT</span>';
+          
+        detailsHtml = `
+          <div class="mb-2"><strong>Employee:</strong> ${document.getElementById('navUsername').textContent}</div>
+          <div class="mb-2"><strong>Clock In Time:</strong> ${timeStr}</div>
+          <div class="mb-2"><strong>Date:</strong> ${dateStr}</div>
+          <div><strong>Status:</strong> ${statusBadge}</div>
+        `;
+        showClockResult(true, "Successfully Clocked In!", detailsHtml);
+      } else {
+        const timeObj = safeParseDate(data.clockOut);
+        const timeStr = timeObj ? timeObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : 'N/A';
+        const dateStr = timeObj ? timeObj.toLocaleDateString([], {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) : 'N/A';
+        
+        detailsHtml = `
+          <div class="mb-2"><strong>Employee:</strong> ${document.getElementById('navUsername').textContent}</div>
+          <div class="mb-2"><strong>Clock Out Time:</strong> ${timeStr}</div>
+          <div class="mb-2"><strong>Date:</strong> ${dateStr}</div>
+          <div class="mb-2"><strong>Hours Worked:</strong> ${data.totalHours != null ? data.totalHours.toFixed(2) + ' hrs' : '0.00 hrs'}</div>
+          <div><strong>Overtime Hours:</strong> ${data.overtimeHours != null ? data.overtimeHours.toFixed(2) + ' hrs' : '0.00 hrs'}</div>
+        `;
+        showClockResult(true, "Successfully Clocked Out!", detailsHtml);
+      }
     } else if (res.status === 401) {
-      msg.innerHTML = '<div class="alert alert-danger">Session expired. Please login again.</div>';
+      showClockResult(false, "Session Expired", `<div class="text-danger fw-semibold">Please log in again.</div>`);
     } else {
       const errorText = await res.text();
-      msg.innerHTML = `<div class="alert alert-danger">Error: ${errorText || 'Failed to save attendance'}</div>`;
+      showClockResult(false, "Failed to Record Attendance", `<div class="text-danger fw-semibold">${errorText || 'Failed to save attendance'}</div>`);
     }
   } catch (error) {
-    msg.innerHTML = `<div class="alert alert-danger">Network error: ${error.message}</div>`;
+    showClockResult(false, "Network Error", `<div class="text-danger fw-semibold">${error.message}</div>`);
   }
 }
 
@@ -504,6 +559,32 @@ function logout() {
     window.location.href = '/logout';
   }
 }
+
+let bootstrapResultModal = null;
+function showClockResult(isSuccess, title, htmlDetails) {
+  const labelEl = document.getElementById('clockResultModalLabel');
+  const iconEl = document.getElementById('clockResultIcon');
+  const titleEl = document.getElementById('clockResultTitle');
+  const detailsEl = document.getElementById('clockResultDetails');
+
+  if (isSuccess) {
+    iconEl.className = 'fas fa-check-circle text-success';
+    titleEl.className = 'fw-bold mb-3 text-success';
+  } else {
+    iconEl.className = 'fas fa-exclamation-triangle text-danger';
+    titleEl.className = 'fw-bold mb-3 text-danger';
+  }
+
+  labelEl.textContent = isSuccess ? 'Success' : 'Error';
+  titleEl.textContent = title;
+  detailsEl.innerHTML = htmlDetails;
+
+  if (!bootstrapResultModal) {
+    bootstrapResultModal = new bootstrap.Modal(document.getElementById('clockResultModal'));
+  }
+  bootstrapResultModal.show();
+}
 </script>
+<script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
 </body>
 </html>

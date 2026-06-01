@@ -138,6 +138,7 @@
     <script>
         let confirmCallback = null;
         let bootstrapConfirmModal = null;
+        let editingDeptId = null;
 
         function showConfirmModal(message, callback) {
             document.getElementById('confirmModalBody').textContent = message;
@@ -247,15 +248,20 @@
                             <td>${d.officeLatitude != null ? d.officeLatitude.toFixed(4) : '-'}, ${d.officeLongitude != null ? d.officeLongitude.toFixed(4) : '-'}</td>
                             <td>${d.geofenceRadiusMeters != null ? d.geofenceRadiusMeters + ' m' : '-'}</td>
                             <td class="text-end">
-                                ${d.isActive ? `
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDept('${d.departmentId}')">
-                                        <i class="fas fa-ban"></i> Deactivate
-                                    </button>
-                                ` : `
-                                    <button class="btn btn-sm btn-outline-success" onclick="enableDept('${d.departmentId}')">
-                                        <i class="fas fa-check-circle"></i> Enable
-                                    </button>
-                                `}
+                                <div class="d-flex gap-1 justify-content-end">
+                                    ${d.isActive ? `
+                                        <button class="btn btn-sm btn-outline-primary" onclick="editDept('${d.departmentId}', \`${d.departmentName}\`, '${d.managerId || ''}', '${d.qrCode || ''}', ${d.officeLatitude || 0}, ${d.officeLongitude || 0}, ${d.geofenceRadiusMeters || 150})">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteDept('${d.departmentId}')">
+                                            <i class="fas fa-ban"></i> Deactivate
+                                        </button>
+                                    ` : `
+                                        <button class="btn btn-sm btn-outline-success" onclick="enableDept('${d.departmentId}')">
+                                            <i class="fas fa-check-circle"></i> Enable
+                                        </button>
+                                    `}
+                                </div>
                             </td>
                         </tr>
                     `).join('');
@@ -265,24 +271,93 @@
             }
         }
 
-        async function loadEmployeesForManagers() {
+        async function loadEmployeesForManagers(currentManagerId = null) {
             try {
+                const deptRes = await fetch('/api/v1/department', {
+                    headers: {'Accept': 'application/json'}
+                });
+                let assignedManagerIds = [];
+                if (deptRes.ok) {
+                    const depts = await deptRes.json();
+                    assignedManagerIds = depts.filter(d => d.isActive && d.managerId !== null).map(d => d.managerId);
+                }
+
                 const res = await fetch('/api/v1/employee?isActive=true', {
                     headers: {'Accept': 'application/json'}
                 });
                 if (res.ok) {
                     const emps = await res.json();
                     const managerSelect = document.getElementById('managerId');
+                    managerSelect.innerHTML = '<option value="">No Manager Assigned...</option>';
                     emps.forEach(emp => {
-                        const opt = document.createElement('option');
-                        opt.value = emp.employeeId;
-                        opt.textContent = `${emp.firstName} ${emp.lastName} (${emp.position || 'Employee'})`;
-                        managerSelect.appendChild(opt);
+                        if (!assignedManagerIds.includes(emp.employeeId) || emp.employeeId === currentManagerId) {
+                            const opt = document.createElement('option');
+                            opt.value = emp.employeeId;
+                            opt.textContent = `${emp.firstName} ${emp.lastName} (${emp.position || 'Employee'})`;
+                            managerSelect.appendChild(opt);
+                        }
                     });
+                    if (currentManagerId) {
+                        managerSelect.value = currentManagerId;
+                    }
                 }
             } catch (err) {
                 console.error('Error fetching employees for managers:', err);
             }
+        }
+
+        async function editDept(id, name, managerIdVal, qrCodeVal, lat, lon, radius) {
+            editingDeptId = id;
+            
+            // Change submit button state
+            document.querySelector('#deptForm button[type="submit"]').innerHTML = '<i class="fas fa-edit"></i> Update Department';
+            document.querySelector('#deptForm button[type="submit"]').className = 'btn btn-warning w-100';
+            
+            // Add Cancel button if it doesn't exist
+            if (!document.getElementById('cancelEditBtn')) {
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.id = 'cancelEditBtn';
+                cancelBtn.className = 'btn btn-outline-secondary w-100 mt-2';
+                cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel Edit';
+                cancelBtn.onclick = cancelEdit;
+                document.querySelector('#deptForm').appendChild(cancelBtn);
+            }
+            
+            // Populate inputs
+            document.getElementById('departmentName').value = name;
+            document.getElementById('qrCode').value = qrCodeVal;
+            document.getElementById('officeLatitude').value = lat;
+            document.getElementById('officeLongitude').value = lon;
+            document.getElementById('geofenceRadius').value = radius;
+            
+            // Reload managers dropdown so it includes the current manager and selects them
+            await loadEmployeesForManagers(managerIdVal);
+            
+            // Update map view
+            updateMapFromInputs();
+            
+            // Scroll to form
+            document.getElementById('deptForm').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function cancelEdit() {
+            editingDeptId = null;
+            document.getElementById('deptForm').reset();
+            document.getElementById('locationStatus').innerHTML = '';
+            
+            // Change submit button back
+            document.querySelector('#deptForm button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Save Department';
+            document.querySelector('#deptForm button[type="submit"]').className = 'btn btn-primary w-100';
+            
+            // Remove Cancel button
+            const cancelBtn = document.getElementById('cancelEditBtn');
+            if (cancelBtn) {
+                cancelBtn.remove();
+            }
+            
+            // Reload default managers dropdown (empty selection)
+            loadEmployeesForManagers();
         }
 
         function detectAdminLocation() {
@@ -330,8 +405,10 @@
             };
 
             try {
-                const res = await fetch('/api/v1/department', {
-                    method: 'POST',
+                const url = editingDeptId ? `/api/v1/department/${editingDeptId}` : '/api/v1/department';
+                const method = editingDeptId ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method: method,
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -339,13 +416,18 @@
                 });
 
                 if (res.ok) {
-                    msg.innerHTML = '<div class="alert alert-success">Department created successfully!</div>';
-                    document.getElementById('deptForm').reset();
-                    document.getElementById('locationStatus').innerHTML = '';
+                    msg.innerHTML = `<div class="alert alert-success">Department ${editingDeptId ? 'updated' : 'created'} successfully!</div>`;
+                    if (editingDeptId) {
+                        cancelEdit();
+                    } else {
+                        document.getElementById('deptForm').reset();
+                        document.getElementById('locationStatus').innerHTML = '';
+                    }
                     loadDepartments();
+                    loadEmployeesForManagers();
                 } else {
                     const errText = await res.text();
-                    msg.innerHTML = `<div class="alert alert-danger">Error: ${errText || 'Failed to create department'}</div>`;
+                    msg.innerHTML = `<div class="alert alert-danger">Error: ${errText || 'Failed to process request'}</div>`;
                 }
             } catch (err) {
                 msg.innerHTML = `<div class="alert alert-danger">Network error: ${err.message}</div>`;
@@ -360,6 +442,7 @@
                     });
                     if (res.ok) {
                         loadDepartments();
+                        loadEmployeesForManagers();
                     } else {
                         alert("Failed to deactivate department.");
                     }
@@ -377,6 +460,7 @@
                     });
                     if (res.ok) {
                         loadDepartments();
+                        loadEmployeesForManagers();
                     } else {
                         const text = await res.text();
                         alert("Failed to reactivate department: " + (text || res.statusText));

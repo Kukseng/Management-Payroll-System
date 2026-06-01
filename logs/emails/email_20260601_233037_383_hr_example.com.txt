@@ -1,0 +1,22 @@
+==================================================
+SIMULATED OUTGOING EMAIL
+Timestamp: 2026-06-01T23:30:37.383998958
+To:        hr@example.com
+Subject:   New Leave Request: Demo User
+==================================================
+
+Hello HR/Manager,
+
+A new leave request has been submitted by Demo User.
+
+Details:
+- Leave Type: Sick
+- Start Date: 2026-06-01
+- End Date:   2026-06-01
+
+Please review the request on the HR Dashboard.
+
+Best regards,
+HR Management System
+
+==================================================

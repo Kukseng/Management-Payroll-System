@@ -1,0 +1,18 @@
+==================================================
+SIMULATED OUTGOING EMAIL
+Timestamp: 2026-06-01T23:31:11.033143204
+To:        employee@example.com
+Subject:   Leave Request Update: REJECTED
+==================================================
+
+Hello Demo User,
+
+Your leave request status has been updated.
+
+New Status: REJECTED
+Remarks:    Deadline today , not approve
+
+Best regards,
+HR Management System
+
+==================================================

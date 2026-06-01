@@ -28,6 +28,12 @@ public class DepartmentController {
         return departmentService.createDepartment(departmentRequest);
     }
 
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public DepartmentResponse updateDepartment(@PathVariable String id, @RequestBody DepartmentRequest departmentRequest) {
+        return departmentService.updateDepartment(id, departmentRequest);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteDepartment(@PathVariable String id) {

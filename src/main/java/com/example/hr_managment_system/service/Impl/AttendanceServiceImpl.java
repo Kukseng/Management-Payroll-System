@@ -52,6 +52,19 @@ public class AttendanceServiceImpl implements AttendanceService {
         attendance.setEmployee(employee);
         attendance.setDepartment(department);
         attendance.setClockIn(LocalDateTime.now());
+
+        // Auto-calculate status (LATE or PRESENT) based on the employee's assigned shift
+        StatusUtil calculatedStatus = StatusUtil.PRESENT;
+        if (employee.getShift() != null && employee.getShift().getStartTime() != null) {
+            java.time.LocalTime nowTime = java.time.LocalTime.now();
+            int graceMinutes = employee.getShift().getGracePeriodMinutes() != null ? employee.getShift().getGracePeriodMinutes() : 0;
+            java.time.LocalTime thresholdTime = employee.getShift().getStartTime().plusMinutes(graceMinutes);
+            if (nowTime.isAfter(thresholdTime)) {
+                calculatedStatus = StatusUtil.LATE;
+            }
+        }
+        attendance.setStatus(calculatedStatus);
+
         attendanceRepository.save(attendance);
 
         return attendanceMapper.attendanceToAttendanceResponse(attendance);
@@ -74,14 +87,14 @@ public class AttendanceServiceImpl implements AttendanceService {
         validateEmployeeDepartment(employee, department);
 
         Attendance attendance = attendanceRepository
-                .findTopByEmployee_EmployeeIdAndDepartment_DepartmentIdAndClockOutIsNullOrderByClockInDesc(
-                        attendanceRequest.employeeId(),
-                        attendanceRequest.departmentId()
-                )
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "No open clock-in record found for this employee and department."
-                ));
+            .findTopByEmployee_EmployeeIdAndDepartment_DepartmentIdAndClockOutIsNullOrderByClockInDesc(
+                attendanceRequest.employeeId(),
+                attendanceRequest.departmentId()
+            )
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "No open clock-in record found for this employee and department."
+            ));
 
         if (attendanceRequest.latitudeOut() != null || attendanceRequest.longitudeOut() != null) {
             if (attendanceRequest.latitudeOut() == null || attendanceRequest.longitudeOut() == null) {
@@ -92,9 +105,6 @@ public class AttendanceServiceImpl implements AttendanceService {
             attendance.setLongitudeOut(attendanceRequest.longitudeOut());
         }
 
-        if (attendanceRequest.status() != null) {
-            attendance.setStatus(attendanceRequest.status());
-        }
         LocalDateTime clockOutTime = LocalDateTime.now();
         attendance.setClockOut(clockOutTime);
         if (attendance.getClockIn() != null) {

@@ -62,31 +62,78 @@
                 <div class="card shadow-sm" style="max-width: 700px;">
                     <div class="card-body p-4">
                         <div id="msg"></div>
-                        <form id="payrollForm" class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Select Employee</label>
-                                <select class="form-select" id="employeeId" required>
-                                    <option value="" disabled selected>Choose an employee...</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold">Month</label>
-                                <input class="form-control" type="number" id="month" min="1" max="12" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold">Year</label>
-                                <input class="form-control" type="number" id="year" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Deductions ($)</label>
-                                <input class="form-control" type="number" step="0.01" id="deductions" value="0">
-                            </div>
-                            <div class="col-12 mt-4">
-                                <button class="btn btn-primary w-100" type="submit">
-                                    <i class="fas fa-play me-1"></i> Calculate & Process Payroll
+
+                        <!-- Mode tabs -->
+                        <ul class="nav nav-pills mb-4 justify-content-center" id="payrollTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active px-4" id="single-tab" data-bs-toggle="pill" data-bs-target="#singleMode" type="button" role="tab" aria-selected="true">
+                                    <i class="fas fa-user me-2"></i> Single Employee
                                 </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-4" id="batch-tab" data-bs-toggle="pill" data-bs-target="#batchMode" type="button" role="tab" aria-selected="false">
+                                    <i class="fas fa-users me-2"></i> Batch Run (All Active)
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="payrollTabContent">
+                            <!-- Single Mode Form -->
+                            <div class="tab-pane fade show active" id="singleMode" role="tabpanel" aria-labelledby="single-tab">
+                                <form id="payrollForm" class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Select Employee</label>
+                                        <select class="form-select" id="employeeId" required>
+                                            <option value="" disabled selected>Choose an employee...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold">Month</label>
+                                        <input class="form-control month-input" type="number" min="1" max="12" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold">Year</label>
+                                        <input class="form-control year-input" type="number" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Deductions ($)</label>
+                                        <input class="form-control" type="number" step="0.01" id="deductions" value="0">
+                                    </div>
+                                    <div class="col-12 mt-4">
+                                        <button class="btn btn-primary w-100" type="submit">
+                                            <i class="fas fa-calculator me-1"></i> Calculate & Process Payroll
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
-                        </form>
+
+                            <!-- Batch Mode Form -->
+                            <div class="tab-pane fade" id="batchMode" role="tabpanel" aria-labelledby="batch-tab">
+                                <form id="batchPayrollForm" class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Target Employees</label>
+                                        <input class="form-control bg-light" value="All Active Employees" readonly>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold">Month</label>
+                                        <input class="form-control month-input" type="number" min="1" max="12" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold">Year</label>
+                                        <input class="form-control year-input" type="number" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Default Deductions ($)</label>
+                                        <input class="form-control" type="number" step="0.01" id="batchDeductions" value="0">
+                                    </div>
+                                    <div class="col-12 mt-4">
+                                        <button class="btn btn-success w-100" type="submit">
+                                            <i class="fas fa-play me-1"></i> Run Batch Payroll
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -120,27 +167,64 @@
         })
         .catch(err => console.error('Error loading employees:', err));
 
-        // Set default month & year to current
+        // Set default month & year to current for all inputs
         const now = new Date();
-        document.getElementById('month').value = now.getMonth() + 1;
-        document.getElementById('year').value = now.getFullYear();
+        document.querySelectorAll('.month-input').forEach(input => input.value = now.getMonth() + 1);
+        document.querySelectorAll('.year-input').forEach(input => input.value = now.getFullYear());
 
+        // Single run
         document.getElementById('payrollForm').addEventListener('submit', async e => {
             e.preventDefault();
-            const res = await fetch('/api/v1/payroll/process', {
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({
-                    employeeId: document.getElementById('employeeId').value,
-                    month: Number(document.getElementById('month').value),
-                    year: Number(document.getElementById('year').value),
-                    deductions: Number(document.getElementById('deductions').value)
-                })
-            });
             const msg = document.getElementById('msg');
-            msg.innerHTML = res.ok 
-                ? '<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> Payroll processed successfully!</div>' 
-                : `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-1"></i> ${await res.text()}</div>`;
+            msg.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-1"></i> Calculating payroll...</div>';
+            
+            const monthVal = e.target.querySelector('.month-input').value;
+            const yearVal = e.target.querySelector('.year-input').value;
+
+            try {
+                const res = await fetch('/api/v1/payroll/process', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        employeeId: document.getElementById('employeeId').value,
+                        month: Number(monthVal),
+                        year: Number(yearVal),
+                        deductions: Number(document.getElementById('deductions').value)
+                    })
+                });
+                msg.innerHTML = res.ok 
+                    ? '<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> Payroll processed successfully!</div>' 
+                    : `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-1"></i> ${await res.text()}</div>`;
+            } catch (err) {
+                msg.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-1"></i> Network error: ${err.message}</div>`;
+            }
+        });
+
+        // Batch run
+        document.getElementById('batchPayrollForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const msg = document.getElementById('msg');
+            msg.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-1"></i> Running batch payroll...</div>';
+            
+            const monthVal = e.target.querySelector('.month-input').value;
+            const yearVal = e.target.querySelector('.year-input').value;
+
+            try {
+                const res = await fetch('/api/v1/payroll/process/batch', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        month: Number(monthVal),
+                        year: Number(yearVal),
+                        defaultDeductions: Number(document.getElementById('batchDeductions').value)
+                    })
+                });
+                msg.innerHTML = res.ok 
+                    ? `<div class="alert alert-success"><i class="fas fa-check-circle me-1"></i> ${await res.text()}</div>` 
+                    : `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-1"></i> ${await res.text()}</div>`;
+            } catch (err) {
+                msg.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-1"></i> Network error: ${err.message}</div>`;
+            }
         });
     </script>
 </body>

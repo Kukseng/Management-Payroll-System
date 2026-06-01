@@ -100,6 +100,83 @@ public class PayrollServiceImpl implements PayrollService {
     }
 
     @Override
+    public String processPayrollBatch(com.example.hr_managment_system.dto.Payroll.PayrollBatchRequest batchRequest) {
+        if (batchRequest.month() == null || batchRequest.month() < 1 || batchRequest.month() > 12) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid month is required.");
+        }
+        if (batchRequest.year() == null || batchRequest.year() < 2000) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid year is required.");
+        }
+
+        List<Employee> activeEmployees = employeeRepository.findAllByIsActiveTrue();
+        int processedCount = 0;
+        int skippedCount = 0;
+
+        for (Employee employee : activeEmployees) {
+            if (payrollRepository.existsByEmployee_EmployeeIdAndMonthAndYear(
+                    employee.getEmployeeId(), batchRequest.month(), batchRequest.year())) {
+                skippedCount++;
+                continue;
+            }
+
+            java.time.LocalDateTime startOfMonth = java.time.LocalDateTime.of(batchRequest.year(), batchRequest.month(), 1, 0, 0, 0);
+            java.time.LocalDateTime endOfMonth = startOfMonth.plusMonths(1).minusNanos(1);
+
+            List<Attendance> attendances = attendanceRepository.findByEmployee_EmployeeIdAndClockInBetween(
+                    employee.getEmployeeId(), startOfMonth, endOfMonth);
+
+            double overtimeHours = attendances.stream()
+                    .filter(a -> a.getOvertimeHours() != null)
+                    .mapToDouble(Attendance::getOvertimeHours)
+                    .sum();
+
+            double baseSalary = employee.getBaseSalary() == null ? 0D : employee.getBaseSalary();
+            double hourlyRate = baseSalary / 160.0;
+            double overtimeRate = hourlyRate > 0 ? hourlyRate * 1.5 : 25.0;
+            double overtimePay = overtimeHours * overtimeRate;
+
+            double grossSalary = baseSalary + overtimePay;
+            double deductions = batchRequest.defaultDeductions() == null ? 0D : batchRequest.defaultDeductions();
+            if (deductions < 0) {
+                deductions = 0D;
+            }
+            double netPay = grossSalary - deductions;
+            if (netPay < 0) {
+                netPay = 0D;
+            }
+
+            Payroll payroll = new Payroll();
+            payroll.setEmployee(employee);
+            payroll.setMonth(batchRequest.month());
+            payroll.setYear(batchRequest.year());
+            payroll.setGrossSalary(grossSalary);
+            payroll.setDeductions(deductions);
+            payroll.setNetPay(netPay);
+            payroll.setOvertimeHours(overtimeHours);
+            payroll.setOvertimePay(overtimePay);
+            payroll.setStatus(com.example.hr_managment_system.util.StatusProgressUtil.PENDING);
+            payroll.setProcessedAt(java.time.LocalDateTime.now());
+            payrollRepository.save(payroll);
+
+            processedCount++;
+
+            try {
+                String monthYear = batchRequest.month() + "/" + batchRequest.year();
+                emailService.sendPayrollProcessedEmail(
+                        employee.getEmail(),
+                        employee.getFirstName() + " " + employee.getLastName(),
+                        monthYear,
+                        netPay
+                );
+            } catch (Exception e) {
+                log.error("Failed to send bulk payroll email notification to {}: {}", employee.getEmail(), e.getMessage());
+            }
+        }
+
+        return "Batch payroll processed successfully. Processed: " + processedCount + ", Skipped (already exists): " + skippedCount + ".";
+    }
+
+    @Override
     public PayrollResponse getPayslipByEmployeeIdAndMonth(String employeeId, Integer month, Integer year) {
         validateEmployeeId(employeeId);
         validateMonthYear(month, year);

@@ -18,5 +18,5 @@ public interface DepartmentService {
 
     DepartmentResponse enableDepartment(String id);
 
-
+    DepartmentResponse updateDepartment(String id, DepartmentRequest departmentRequest);
 }
