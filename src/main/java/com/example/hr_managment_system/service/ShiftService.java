@@ -9,4 +9,6 @@ public interface ShiftService {
     ShiftResponse createShift(ShiftRequest request);
     List<ShiftResponse> getAllShifts();
     void assignShiftToEmployee(String employeeId, String shiftId);
+    ShiftResponse updateShift(String shiftId, ShiftRequest request);
+    void deleteShift(String shiftId);
 }

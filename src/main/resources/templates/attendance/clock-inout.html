@@ -10,6 +10,15 @@
     <!-- Leaflet.js Map dependencies -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        @keyframes spin-slow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fa-spin-slow {
+            animation: spin-slow 10s linear infinite;
+        }
+    </style>
 </head>
 <body class="bg-light">
     <div class="wrapper">
@@ -60,6 +69,39 @@
                 <div class="card shadow-sm border-0" style="max-width: 800px;">
                     <div class="card-body p-4">
                         <div id="attendanceStatusBanner"></div>
+                        
+                        <!-- Shift Countdown Timer Section -->
+                        <div id="shiftCountdownContainer" style="display: none;" class="mb-4">
+                            <div class="card text-white border-0 shadow-sm" style="background: linear-gradient(135deg, #4f46e5 0%, #312e81 100%); border-radius: 12px;">
+                                <div class="card-body p-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="rounded-circle bg-white bg-opacity-20 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; min-width: 48px;">
+                                            <i class="fas fa-hourglass-half fa-spin-slow fs-4 text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1 fw-bold text-white-50 text-uppercase tracking-wider" id="countdownHeader" style="font-size: 0.72rem; letter-spacing: 0.05em; margin: 0;">Shift Countdown</h6>
+                                            <div class="d-flex align-items-baseline gap-2">
+                                                <h4 class="mb-0 fw-bold" id="countdownTimer" style="font-family: monospace; font-size: 1.6rem; line-height: 1;">00:00:00</h4>
+                                                <span class="small text-white-50" id="countdownLabel" style="font-size: 0.8rem;">remaining</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 mx-3" style="max-width: 300px; min-width: 150px;">
+                                        <div class="d-flex justify-content-between mb-1 text-white-50" style="font-size: 0.75rem;">
+                                            <span id="countdownStartLabel">08:00 AM</span>
+                                            <span id="countdownEndLabel">05:00 PM</span>
+                                        </div>
+                                        <div class="progress bg-white bg-opacity-20" style="height: 6px;">
+                                            <div class="progress-bar bg-info" role="progressbar" id="countdownProgressBar" style="width: 0%; transition: width 1s linear;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-white bg-opacity-25 text-white py-2 px-3 rounded-pill fw-semibold" id="countdownShiftName" style="font-size: 0.8rem;">Morning Shift</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="msg"></div>
                         <div class="row g-3">
                             <div class="col-md-6"><label class="form-label fw-semibold">Employee ID</label><input class="form-control" id="employeeId" placeholder="emp-id" readonly></div>
@@ -301,6 +343,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (statusEl) {
         statusEl.innerHTML = `<span class="text-secondary"><i class="fas fa-info-circle"></i> Auto-detection skipped/blocked: ${err.message}. Use buttons to detect or fill coordinates.</span>`;
       }
+    }, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
     });
   } else {
     if (statusEl) {
@@ -367,6 +413,11 @@ async function checkAttendanceStatus() {
           </div>`;
         clockInBtn.disabled = true;
         clockOutBtn.disabled = false;
+        
+        const empId = document.getElementById('employeeId').value;
+        if (empId) {
+          loadEmployeeShiftInfo(empId, true);
+        }
       } else {
         statusBanner.innerHTML = `
           <div class="alert alert-secondary py-2 px-3 mb-3 d-flex align-items-center">
@@ -375,6 +426,11 @@ async function checkAttendanceStatus() {
           </div>`;
         clockInBtn.disabled = false;
         clockOutBtn.disabled = true;
+        
+        const empId = document.getElementById('employeeId').value;
+        if (empId) {
+          loadEmployeeShiftInfo(empId, false);
+        }
       }
     }
   } catch (e) {
@@ -439,6 +495,10 @@ function detectLocation() {
       if (statusEl) {
         statusEl.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Location detection failed: ${err.message}</span>`;
       }
+    }, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
     });
   } else {
     alert("Geolocation is not supported by this browser.");
@@ -583,6 +643,146 @@ function showClockResult(isSuccess, title, htmlDetails) {
     bootstrapResultModal = new bootstrap.Modal(document.getElementById('clockResultModal'));
   }
   bootstrapResultModal.show();
+}
+
+let countdownInterval = null;
+
+async function loadEmployeeShiftInfo(employeeId, isClockedIn) {
+  try {
+    const empRes = await fetch(`/api/v1/employee/${employeeId}`, {
+      headers: {'Accept': 'application/json'}
+    });
+    if (!empRes.ok) return;
+    const employee = await empRes.json();
+    
+    const shiftsRes = await fetch('/api/v1/shifts', {
+      headers: {'Accept': 'application/json'}
+    });
+    if (!shiftsRes.ok) return;
+    const shifts = await shiftsRes.json();
+    const shift = employee && employee.shiftId ? shifts.find(s => s.shiftId === employee.shiftId) : null;
+
+    const container = document.getElementById('shiftCountdownContainer');
+    if (!container) return;
+    container.style.display = 'block';
+
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+
+    if (!shift) {
+      document.getElementById('countdownShiftName').textContent = 'No Shift';
+      document.getElementById('countdownTimer').textContent = '--:--';
+      document.getElementById('countdownLabel').textContent = 'contact HR';
+      document.getElementById('countdownStartLabel').textContent = '--:--';
+      document.getElementById('countdownEndLabel').textContent = '--:--';
+      document.getElementById('countdownProgressBar').style.width = '0%';
+      return;
+    }
+
+    const startTimeParts = shift.startTime.split(':');
+    const endTimeParts = shift.endTime.split(':');
+    const startHour = parseInt(startTimeParts[0]);
+    const startMin = parseInt(startTimeParts[1]);
+    const startSec = parseInt(startTimeParts[2] || 0);
+    const endHour = parseInt(endTimeParts[0]);
+    const endMin = parseInt(endTimeParts[1]);
+    const endSec = parseInt(endTimeParts[2] || 0);
+
+    document.getElementById('countdownShiftName').textContent = shift.name;
+    
+    const formatTime12h = (h, m) => {
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const hr = h % 12 || 12;
+      const min = m < 10 ? '0' + m : m;
+      return `${hr}:${min} ${ampm}`;
+    };
+    
+    const start12h = formatTime12h(startHour, startMin);
+    const end12h = formatTime12h(endHour, endMin);
+    
+    document.getElementById('countdownStartLabel').textContent = start12h;
+    document.getElementById('countdownEndLabel').textContent = end12h;
+
+    const hourglassIcon = container.querySelector('.fa-hourglass-half');
+
+    if (isClockedIn) {
+      document.getElementById('countdownHeader').textContent = 'Shift Countdown';
+      if (hourglassIcon) hourglassIcon.classList.add('fa-spin-slow');
+      
+      const updateCountdown = () => {
+        const now = new Date();
+        let shiftStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMin, startSec);
+        let shiftEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMin, endSec);
+
+        if (shiftEnd < shiftStart) {
+          if (now.getHours() >= startHour || (now.getHours() == startHour && now.getMinutes() >= startMin)) {
+            shiftEnd.setDate(shiftEnd.getDate() + 1);
+          } else {
+            shiftStart.setDate(shiftStart.getDate() - 1);
+          }
+        }
+
+        const totalShiftMs = shiftEnd - shiftStart;
+        const elapsedMs = now - shiftStart;
+        
+        if (now < shiftEnd) {
+          const remainingMs = shiftEnd - now;
+          const totalSecs = Math.floor(remainingMs / 1000);
+          const hrs = Math.floor(totalSecs / 3600);
+          const mins = Math.floor((totalSecs % 3600) / 60);
+          const secs = totalSecs % 60;
+
+          const formatDigit = (num) => num < 10 ? '0' + num : num;
+          document.getElementById('countdownTimer').textContent = `${formatDigit(hrs)}:${formatDigit(mins)}:${formatDigit(secs)}`;
+          document.getElementById('countdownLabel').textContent = 'remaining';
+          document.getElementById('countdownLabel').className = 'small text-white-50';
+
+          let percentage = (elapsedMs / totalShiftMs) * 100;
+          percentage = Math.max(0, Math.min(100, percentage));
+          
+          const progressBar = document.getElementById('countdownProgressBar');
+          progressBar.style.width = `${percentage}%`;
+          progressBar.setAttribute('aria-valuenow', Math.floor(percentage));
+          progressBar.className = 'progress-bar bg-info';
+        } else {
+          const overtimeMs = now - shiftEnd;
+          const totalSecs = Math.floor(overtimeMs / 1000);
+          const hrs = Math.floor(totalSecs / 3600);
+          const mins = Math.floor((totalSecs % 3600) / 60);
+          const secs = totalSecs % 60;
+
+          const formatDigit = (num) => num < 10 ? '0' + num : num;
+          document.getElementById('countdownTimer').textContent = `+${formatDigit(hrs)}:${formatDigit(mins)}:${formatDigit(secs)}`;
+          document.getElementById('countdownLabel').textContent = 'overtime';
+          document.getElementById('countdownLabel').className = 'small text-warning fw-bold';
+
+          const progressBar = document.getElementById('countdownProgressBar');
+          progressBar.style.width = `100%`;
+          progressBar.setAttribute('aria-valuenow', 100);
+          progressBar.className = 'progress-bar bg-success';
+        }
+      };
+
+      updateCountdown();
+      countdownInterval = setInterval(updateCountdown, 1000);
+    } else {
+      document.getElementById('countdownHeader').textContent = "Today's Shift Plan";
+      if (hourglassIcon) hourglassIcon.classList.remove('fa-spin-slow');
+      
+      document.getElementById('countdownTimer').textContent = end12h;
+      document.getElementById('countdownLabel').textContent = 'scheduled clock out';
+      document.getElementById('countdownLabel').className = 'small text-white-50';
+      
+      const progressBar = document.getElementById('countdownProgressBar');
+      progressBar.style.width = '0%';
+      progressBar.setAttribute('aria-valuenow', 0);
+      progressBar.className = 'progress-bar bg-secondary';
+    }
+  } catch (error) {
+    console.error('Error loading employee shift info:', error);
+  }
 }
 </script>
 <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>

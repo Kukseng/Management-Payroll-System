@@ -88,6 +88,12 @@ public class PayrollController {
     public PayrollResponse approvePayroll(@PathVariable String uuid) {
         return payrollService.approvePayroll(uuid);
     }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/{uuid}")
+    public void deletePayroll(@PathVariable String uuid) {
+        payrollService.deletePayroll(uuid);
+    }
 }
 //String processPayroll(PayrollRequest payrollRequest);
 //    PayrollResponse getPayslipByEmployeeIdAndMonth(Integer employeeId, Integer month, Integer year);

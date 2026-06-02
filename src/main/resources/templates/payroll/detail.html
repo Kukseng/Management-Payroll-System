@@ -78,10 +78,21 @@
 
                 const grossVal = p.grossSalary != null ? p.grossSalary.toFixed(2) : '0.00';
                 const deductionsVal = p.deductions != null ? p.deductions.toFixed(2) : '0.00';
+                const latePenaltyVal = p.latePenalty != null ? p.latePenalty.toFixed(2) : '0.00';
+                const latePenaltyRateVal = p.latePenaltyRate != null ? p.latePenaltyRate.toFixed(2) : '0.00';
                 const overtimeHoursVal = p.overtimeHours != null ? p.overtimeHours.toFixed(1) : '0.0';
                 const overtimePayVal = p.overtimePay != null ? p.overtimePay.toFixed(2) : '0.00';
+                const totalHoursVal = p.totalHours != null ? p.totalHours.toFixed(1) : '0.0';
                 const netVal = p.netPay != null ? p.netPay.toFixed(2) : '0.00';
                 const statusColorClass = p.status === 'APPROVED' ? 'bg-success' : 'bg-warning';
+
+                let latePenaltyLabel = 'Late Penalties:';
+                if (p.latePenalty > 0 && p.latePenaltyRate > 0) {
+                    const count = Math.round(p.latePenalty / p.latePenaltyRate);
+                    latePenaltyLabel = `Late Penalties (${count} @ $${latePenaltyRateVal}/late):`;
+                } else if (p.latePenaltyRate > 0) {
+                    latePenaltyLabel = `Late Penalties ($${latePenaltyRateVal}/late):`;
+                }
 
                 result.innerHTML = `
                     <div class="border rounded p-4 bg-white shadow-sm mt-3">
@@ -92,6 +103,7 @@
                                 <p class="mb-2"><strong>Name:</strong> <span class="text-primary">${p.employeeFirstName || ''} ${p.employeeLastName || ''}</span></p>
                                 <p class="mb-2"><strong>Employee ID:</strong> <code>${p.employeeId || ''}</code></p>
                                 <p class="mb-2"><strong>Period Covered:</strong> ${monthStr} ${p.year}</p>
+                                <p class="mb-2"><strong>Total Hours Worked:</strong> <span class="badge bg-light text-dark border">${totalHoursVal} hrs</span></p>
                                 <p class="mb-0"><strong>Payslip ID:</strong> <small class="text-muted">${p.payrollId}</small></p>
                             </div>
 
@@ -107,7 +119,11 @@
                                     <span class="fw-semibold">+ $${overtimePayVal}</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2 text-danger">
-                                    <span>Deductions:</span>
+                                    <span>${latePenaltyLabel}</span>
+                                    <span class="fw-semibold">- $${latePenaltyVal}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-danger">
+                                    <span>Other Deductions:</span>
                                     <span class="fw-semibold">- $${deductionsVal}</span>
                                 </div>
                                 <hr class="my-2">

@@ -34,6 +34,23 @@ public class AttendanceServiceImpl implements AttendanceService {
     public AttendanceResponse clockIn(AttendanceRequest attendanceRequest) {
         validateClockInRequest(attendanceRequest);
 
+        // 1. Check if employee is already clocked in (any open attendance record)
+        boolean isAlreadyClockedIn = attendanceRepository.findAll().stream()
+                .anyMatch(a -> a.getEmployee().getEmployeeId().equals(attendanceRequest.employeeId()) && a.getClockOut() == null);
+        if (isAlreadyClockedIn) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Employee is already clocked in. Please clock out first.");
+        }
+
+        // 2. Check if employee has already clocked in and out today
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = LocalDate.now().plusDays(1).atStartOfDay().minusNanos(1);
+        List<Attendance> todayAttendances = attendanceRepository.findByEmployee_EmployeeIdAndClockInBetween(
+                attendanceRequest.employeeId(), startOfDay, endOfDay
+        );
+        if (!todayAttendances.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Employee has already completed attendance for today.");
+        }
+
         Employee employee  = employeeRepository.findByEmployeeId(attendanceRequest.employeeId()).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Employee with ID " + attendanceRequest.employeeId() + " does not exist.")

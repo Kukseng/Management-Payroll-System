@@ -17,4 +17,5 @@ public interface PayrollService {
 
     List<PayrollResponse> getAllPayrolls();
     List<PayrollResponse> getPayrollByDepartmentId(String departmentId);
+    void deletePayroll(String uuid);
 }

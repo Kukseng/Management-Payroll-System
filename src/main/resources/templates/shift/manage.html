@@ -69,7 +69,7 @@
                     <div class="col-md-5" th:if="${role == 'ADMIN'}">
                         <div class="card shadow-sm border-0">
                             <div class="card-header bg-white">
-                                <h5 class="mb-0 text-primary"><i class="fas fa-plus-circle"></i> Create Shift</h5>
+                                <h5 class="mb-0 text-primary" id="formCardTitle"><i class="fas fa-plus-circle"></i> Create Shift</h5>
                             </div>
                             <div class="card-body">
                                 <div id="createMsg"></div>
@@ -91,9 +91,17 @@
                                         <input class="form-control" type="number" id="gracePeriod" min="0" value="15" required>
                                         <div class="form-text small">Allowed time before marked late.</div>
                                     </div>
+                                    <div class="col-12 mt-2">
+                                        <label class="form-label fw-semibold">Lateness Penalty ($)</label>
+                                        <input class="form-control" type="number" step="0.01" min="0" id="latePenalty" value="0.00" required>
+                                        <div class="form-text small">Fine per late arrival (first 3 lates in a month are free).</div>
+                                    </div>
                                     <div class="col-12 mt-4">
-                                        <button class="btn btn-primary w-100" type="submit">
+                                        <button class="btn btn-primary w-100" type="submit" id="submitBtn">
                                             <i class="fas fa-save me-1"></i> Save Shift Plan
+                                        </button>
+                                        <button class="btn btn-secondary w-100 mt-2" type="button" id="cancelEditBtn" style="display: none;" onclick="cancelEdit()">
+                                            <i class="fas fa-times me-1"></i> Cancel Edit
                                         </button>
                                     </div>
                                 </form>
@@ -146,12 +154,14 @@
                                             <th>Shift Name</th>
                                             <th>Hours</th>
                                             <th>Grace Period</th>
+                                            <th>Late Penalty</th>
                                             <th>Reference ID</th>
+                                            <th th:if="${role == 'ADMIN'}" style="width: 120px;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="shiftRows">
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-4">
+                                            <td th:colspan="${role == 'ADMIN'} ? 6 : 5" class="text-center text-muted py-4">
                                                 <i class="fas fa-spinner fa-spin me-2"></i> Querying shifts...
                                             </td>
                                         </tr>
@@ -202,7 +212,10 @@
 
     <script th:src="@{/webjars/jquery/3.6.0/jquery.min.js}"></script>
     <script th:src="@{/webjars/bootstrap/5.3.0/js/bootstrap.bundle.min.js}"></script>
-    <script>
+    <script th:inline="javascript">
+        const currentRole = /*[[${role}]]*/ 'MANAGER';
+        let editingShiftId = null;
+
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
                 window.location.href = '/logout';
@@ -219,7 +232,7 @@
             // Setup Form submissions if ADMIN
             const createForm = document.getElementById('createShiftForm');
             if (createForm) {
-                createForm.addEventListener('submit', handleCreateShift);
+                createForm.addEventListener('submit', handleSaveShift);
             }
 
             document.getElementById('assignShiftForm').addEventListener('submit', handleAssignShift);
@@ -228,6 +241,7 @@
         async function loadShifts() {
             const rows = document.getElementById('shiftRows');
             const select = document.getElementById('shiftSelect');
+            const colCount = currentRole === 'ADMIN' ? 6 : 5;
             try {
                 const res = await fetch('/api/v1/shifts', { headers: { 'Accept': 'application/json' } });
                 if (!res.ok) throw new Error();
@@ -237,11 +251,29 @@
                 if (shiftsList && shiftsList.length > 0) {
                     rows.innerHTML = shiftsList.map(s => {
                         const grace = s.gracePeriodMinutes ? `${s.gracePeriodMinutes} mins` : 'No grace period';
+                        const penalty = s.latePenaltyAmount !== null && s.latePenaltyAmount !== undefined ? `$${s.latePenaltyAmount.toFixed(2)}` : '$0.00';
+                        let actionButtons = '';
+                        if (currentRole === 'ADMIN') {
+                            actionButtons = `
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-primary" onclick="editShift('${s.shiftId}')" title="Edit Shift">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" onclick="confirmDeleteShift('${s.shiftId}', '${s.name}')" title="Delete Shift">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            `;
+                        }
                         return `<tr>
                             <td><strong class="text-primary">${s.name}</strong></td>
                             <td><i class="far fa-clock text-secondary me-1"></i> ${s.startTime.substring(0,5)} - ${s.endTime.substring(0,5)}</td>
                             <td><span class="badge bg-light text-dark border">${grace}</span></td>
+                            <td><span class="badge bg-light text-danger border">${penalty} / late</span></td>
                             <td><small class="font-monospace text-muted">${s.shiftId.substring(0,8)}...</small></td>
+                            ${actionButtons}
                         </tr>`;
                     }).join('');
 
@@ -254,7 +286,7 @@
                         select.appendChild(opt);
                     });
                 } else {
-                    rows.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No shift configurations defined.</td></tr>';
+                    rows.innerHTML = `<tr><td colspan="${colCount}" class="text-center text-muted py-4">No shift configurations defined.</td></tr>`;
                     select.innerHTML = '<option value="" disabled selected>No shifts defined</option>';
                 }
                 
@@ -262,7 +294,7 @@
                 loadAssignments();
             } catch (err) {
                 console.error(err);
-                rows.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4">Failed to load shifts.</td></tr>';
+                rows.innerHTML = `<tr><td colspan="${colCount}" class="text-center text-danger py-4">Failed to load shifts.</td></tr>`;
             }
         }
 
@@ -389,28 +421,62 @@
             toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
         }
 
-        async function handleCreateShift(e) {
+        function editShift(shiftId) {
+            const shift = shiftsList.find(s => s.shiftId === shiftId);
+            if (!shift) return;
+
+            editingShiftId = shiftId;
+            document.getElementById('shiftName').value = shift.name;
+            document.getElementById('startTime').value = shift.startTime.substring(0, 5);
+            document.getElementById('endTime').value = shift.endTime.substring(0, 5);
+            document.getElementById('gracePeriod').value = shift.gracePeriodMinutes;
+            document.getElementById('latePenalty').value = shift.latePenaltyAmount !== null && shift.latePenaltyAmount !== undefined ? shift.latePenaltyAmount.toFixed(2) : '0.00';
+
+            document.getElementById('formCardTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Shift';
+            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save me-1"></i> Update Shift Plan';
+            document.getElementById('cancelEditBtn').style.display = 'block';
+            
+            document.getElementById('createShiftForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelEdit() {
+            editingShiftId = null;
+            document.getElementById('createShiftForm').reset();
+            document.getElementById('latePenalty').value = '0.00';
+            document.getElementById('formCardTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Create Shift';
+            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save me-1"></i> Save Shift Plan';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+        }
+
+        async function handleSaveShift(e) {
             e.preventDefault();
             const name = document.getElementById('shiftName').value.trim();
             const start = document.getElementById('startTime').value;
             const end = document.getElementById('endTime').value;
             const grace = parseInt(document.getElementById('gracePeriod').value);
+            const penalty = parseFloat(document.getElementById('latePenalty').value || 0.0);
+
+            const payload = {
+                name: name,
+                startTime: start.length === 5 ? start + ":00" : start,
+                endTime: end.length === 5 ? end + ":00" : end,
+                gracePeriodMinutes: grace,
+                latePenaltyAmount: penalty
+            };
+
+            const url = editingShiftId ? `/api/v1/shifts/${editingShiftId}` : '/api/v1/shifts';
+            const method = editingShiftId ? 'PUT' : 'POST';
 
             try {
-                const res = await fetch('/api/v1/shifts', {
-                    method: 'POST',
+                const res = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: name,
-                        startTime: start + ":00",
-                        endTime: end + ":00",
-                        gracePeriodMinutes: grace
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 if (res.ok) {
-                    showNotification('Shift plan created successfully!', 'success');
-                    document.getElementById('createShiftForm').reset();
+                    showNotification(editingShiftId ? 'Shift plan updated successfully!' : 'Shift plan created successfully!', 'success');
+                    cancelEdit();
                     loadShifts();
                 } else {
                     const err = await res.text();
@@ -419,6 +485,30 @@
             } catch (error) {
                 console.error(error);
                 showNotification('Network error saving shift.', 'danger');
+            }
+        }
+
+        async function confirmDeleteShift(shiftId, name) {
+            if (confirm(`Are you sure you want to delete the shift "${name}"?\nThis will detach the shift from all assigned employees.`)) {
+                try {
+                    const res = await fetch(`/api/v1/shifts/${shiftId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (res.ok) {
+                        showNotification('Shift plan deleted successfully!', 'success');
+                        if (editingShiftId === shiftId) {
+                            cancelEdit();
+                        }
+                        loadShifts();
+                    } else {
+                        const err = await res.text();
+                        showNotification(err || 'Failed to delete shift', 'danger');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showNotification('Network error deleting shift.', 'danger');
+                }
             }
         }
 

@@ -46,4 +46,13 @@ public class Payroll {
 
     @Column(name = "overtime_pay")
     private Double overtimePay;
+
+    @Column(name = "total_hours")
+    private Double totalHours;
+
+    @Column(name = "late_penalty")
+    private Double latePenalty;
+
+    @Column(name = "late_penalty_rate")
+    private Double latePenaltyRate;
 }

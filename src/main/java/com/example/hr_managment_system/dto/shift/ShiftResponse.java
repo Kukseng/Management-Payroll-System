@@ -7,6 +7,7 @@ public record ShiftResponse(
         String name,
         LocalTime startTime,
         LocalTime endTime,
-        Integer gracePeriodMinutes
+        Integer gracePeriodMinutes,
+        Double latePenaltyAmount
 ) {
 }

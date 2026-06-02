@@ -6,6 +6,7 @@ public record ShiftRequest(
         String name,
         LocalTime startTime,
         LocalTime endTime,
-        Integer gracePeriodMinutes
+        Integer gracePeriodMinutes,
+        Double latePenaltyAmount
 ) {
 }

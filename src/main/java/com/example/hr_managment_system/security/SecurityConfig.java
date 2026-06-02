@@ -111,7 +111,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/attendance/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/v1/shifts/assign").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/v1/shifts").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/shifts").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/shifts/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/shifts/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/shifts").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
                         .anyRequest().authenticated())
                 // Enable form login for Thymeleaf UI, redirect users by role
                 .formLogin(form -> form

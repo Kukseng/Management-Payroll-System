@@ -30,7 +30,10 @@ public class Shift {
     @Column(name = "grace_period_minutes")
     private Integer gracePeriodMinutes; // Minutes after start_time considered on-time
 
-    @OneToMany(mappedBy = "shift", cascade = CascadeType.ALL)
+    @Column(name = "late_penalty_amount")
+    private Double latePenaltyAmount; // Penalty amount per late arrival (beyond 3 free lates)
+
+    @OneToMany(mappedBy = "shift")
     private Set<Employee> employees;
 
 }

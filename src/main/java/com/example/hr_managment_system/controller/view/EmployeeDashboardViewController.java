@@ -4,6 +4,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
@@ -68,7 +69,7 @@ public class EmployeeDashboardViewController {
     }
 
     @GetMapping("/payroll/{uuid}")
-    public String payrollDetail(Model model) {
+    public String payrollDetail(@PathVariable String uuid, Model model) {
         model.addAttribute("role", "EMPLOYEE");
         return "payroll/detail";
     }
@@ -81,7 +82,7 @@ public class EmployeeDashboardViewController {
     }
 
     @GetMapping("/performance/{id}")
-    public String performanceDetail(Model model) {
+    public String performanceDetail(@PathVariable String id, Model model) {
         model.addAttribute("role", "EMPLOYEE");
         return "performance/detail";
     }

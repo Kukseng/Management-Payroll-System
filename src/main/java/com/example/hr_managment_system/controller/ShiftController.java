@@ -35,4 +35,16 @@ public class ShiftController {
         shiftService.assignShiftToEmployee(employeeId, shiftId);
         return "Shift assigned successfully.";
     }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PutMapping("/{id}")
+    public ShiftResponse updateShift(@PathVariable String id, @RequestBody ShiftRequest request) {
+        return shiftService.updateShift(id, request);
+    }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/{id}")
+    public void deleteShift(@PathVariable String id) {
+        shiftService.deleteShift(id);
+    }
 }

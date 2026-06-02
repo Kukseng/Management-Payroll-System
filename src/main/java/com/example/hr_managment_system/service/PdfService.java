@@ -105,14 +105,28 @@ public class PdfService {
             financialTable.addCell(header2);
 
             // Base Salary
-            double baseSalaryVal = employee != null && employee.getBaseSalary() != null ? employee.getBaseSalary() : 0.0;
-            addFinancialRow(financialTable, "Base Salary", baseSalaryVal, bodyFont);
+            double baseSalaryVal = payroll.getGrossSalary() - (payroll.getOvertimePay() != null ? payroll.getOvertimePay() : 0.0);
+            String baseSalaryLabel = "Base Salary";
+            if (employee != null && employee.getEmploymentType() != null && 
+                employee.getEmploymentType() != com.example.hr_managment_system.util.EmplomentType.FULL_TIME) {
+                double totalHours = payroll.getTotalHours() != null ? payroll.getTotalHours() : 0.0;
+                double otHours = payroll.getOvertimeHours() != null ? payroll.getOvertimeHours() : 0.0;
+                double stdHours = Math.max(0.0, totalHours - otHours);
+                baseSalaryLabel = String.format("Base Salary (%.1f std hrs)", stdHours);
+            }
+            addFinancialRow(financialTable, baseSalaryLabel, baseSalaryVal, bodyFont);
 
             // Overtime Pay
             double overtimeHours = payroll.getOvertimeHours() != null ? payroll.getOvertimeHours() : 0.0;
             double overtimePay = payroll.getOvertimePay() != null ? payroll.getOvertimePay() : 0.0;
             if (overtimeHours > 0) {
                 addFinancialRow(financialTable, String.format("Overtime Pay (%s hrs)", String.format("%.2f", overtimeHours)), overtimePay, bodyFont);
+            }
+
+            // Late Penalties
+            double latePenalty = payroll.getLatePenalty() != null ? payroll.getLatePenalty() : 0.0;
+            if (latePenalty > 0) {
+                addFinancialRow(financialTable, "Lateness Penalties", -latePenalty, bodyFont);
             }
 
             // Deductions

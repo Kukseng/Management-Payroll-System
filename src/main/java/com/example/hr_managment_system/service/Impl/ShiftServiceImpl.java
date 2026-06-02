@@ -10,6 +10,7 @@ import com.example.hr_managment_system.service.ShiftService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -35,6 +36,7 @@ public class ShiftServiceImpl implements ShiftService {
         shift.setStartTime(request.startTime());
         shift.setEndTime(request.endTime());
         shift.setGracePeriodMinutes(request.gracePeriodMinutes() == null ? 0 : request.gracePeriodMinutes());
+        shift.setLatePenaltyAmount(request.latePenaltyAmount() == null ? 0.0 : request.latePenaltyAmount());
 
         Shift saved = shiftRepository.save(shift);
         return mapToResponse(saved);
@@ -63,13 +65,55 @@ public class ShiftServiceImpl implements ShiftService {
         employeeRepository.save(employee);
     }
 
+    @Override
+    @Transactional
+    public ShiftResponse updateShift(String shiftId, ShiftRequest request) {
+        Shift shift = shiftRepository.findById(shiftId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shift not found."));
+
+        if (request.name() == null || request.name().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Shift name is required.");
+        }
+        if (request.startTime() == null || request.endTime() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start time and end time are required.");
+        }
+
+        // Check unique shift name excluding current shiftId
+        shiftRepository.findAll().stream()
+                .filter(s -> s.getName().equalsIgnoreCase(request.name().trim()) && !s.getShiftId().equals(shiftId))
+                .findFirst()
+                .ifPresent(s -> {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Shift name already exists.");
+                });
+
+        shift.setName(request.name().trim());
+        shift.setStartTime(request.startTime());
+        shift.setEndTime(request.endTime());
+        shift.setGracePeriodMinutes(request.gracePeriodMinutes() == null ? 0 : request.gracePeriodMinutes());
+        shift.setLatePenaltyAmount(request.latePenaltyAmount() == null ? 0.0 : request.latePenaltyAmount());
+
+        Shift saved = shiftRepository.save(shift);
+        return mapToResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public void deleteShift(String shiftId) {
+        Shift shift = shiftRepository.findById(shiftId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shift not found."));
+
+        employeeRepository.detachShiftFromEmployees(shiftId);
+        shiftRepository.delete(shift);
+    }
+
     private ShiftResponse mapToResponse(Shift shift) {
         return new ShiftResponse(
                 shift.getShiftId(),
                 shift.getName(),
                 shift.getStartTime(),
                 shift.getEndTime(),
-                shift.getGracePeriodMinutes()
+                shift.getGracePeriodMinutes(),
+                shift.getLatePenaltyAmount()
         );
     }
 }

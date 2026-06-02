@@ -51,22 +51,46 @@ public class PayrollServiceImpl implements PayrollService {
         List<Attendance> attendances = attendanceRepository.findByEmployee_EmployeeIdAndClockInBetween(
                 payrollRequest.employeeId(), startOfMonth, endOfMonth);
 
+        double totalHours = attendances.stream()
+                .filter(a -> a.getTotalHours() != null)
+                .mapToDouble(Attendance::getTotalHours)
+                .sum();
+
         double overtimeHours = attendances.stream()
                 .filter(a -> a.getOvertimeHours() != null)
                 .mapToDouble(Attendance::getOvertimeHours)
                 .sum();
 
+        double standardHours = Math.max(0.0, totalHours - overtimeHours);
+
         double baseSalary = employee.getBaseSalary() == null ? 0D : employee.getBaseSalary();
         double hourlyRate = baseSalary / 160.0;
+
+        // Calculate earned base salary based on clocked working hours for all employees
+        double baseSalaryEarned = standardHours * hourlyRate;
+
         double overtimeRate = hourlyRate > 0 ? hourlyRate * 1.5 : 25.0; // fallback standard $25/hr
         double overtimePay = overtimeHours * overtimeRate;
 
-        double grossSalary = baseSalary + overtimePay;
-        double deductions = payrollRequest.deductions() == null ? 0D : payrollRequest.deductions();
-        if (deductions < 0) {
+        double grossSalary = baseSalaryEarned + overtimePay;
+        double manualDeductions = payrollRequest.deductions() == null ? 0D : payrollRequest.deductions();
+        if (manualDeductions < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "deductions must be greater than or equal to 0.");
         }
-        double netPay = grossSalary - deductions;
+
+        // Calculate auto late penalty (beyond 3 free lates)
+        double latePenalty = 0.0;
+        double latePenaltyRate = 0.0;
+        if (employee.getShift() != null && employee.getShift().getLatePenaltyAmount() != null) {
+            latePenaltyRate = employee.getShift().getLatePenaltyAmount();
+            long lateCount = attendances.stream()
+                    .filter(a -> a.getStatus() == com.example.hr_managment_system.util.StatusUtil.LATE)
+                    .count();
+            long chargeableLates = Math.max(0, lateCount - 3);
+            latePenalty = chargeableLates * latePenaltyRate;
+        }
+
+        double netPay = grossSalary - manualDeductions - latePenalty;
         if (netPay < 0) {
             netPay = 0D;
         }
@@ -74,10 +98,13 @@ public class PayrollServiceImpl implements PayrollService {
         Payroll payroll = payrollMapper.PayrollRequesttoPayroll(payrollRequest);
         payroll.setEmployee(employee);
         payroll.setGrossSalary(grossSalary);
-        payroll.setDeductions(deductions);
+        payroll.setDeductions(manualDeductions);
+        payroll.setLatePenalty(latePenalty);
+        payroll.setLatePenaltyRate(latePenaltyRate);
         payroll.setNetPay(netPay);
         payroll.setOvertimeHours(overtimeHours);
         payroll.setOvertimePay(overtimePay);
+        payroll.setTotalHours(totalHours);
         payroll.setStatus(StatusProgressUtil.PENDING);
         payroll.setProcessedAt(LocalDateTime.now());
         payrollRepository.save(payroll);
@@ -125,22 +152,46 @@ public class PayrollServiceImpl implements PayrollService {
             List<Attendance> attendances = attendanceRepository.findByEmployee_EmployeeIdAndClockInBetween(
                     employee.getEmployeeId(), startOfMonth, endOfMonth);
 
+            double totalHours = attendances.stream()
+                    .filter(a -> a.getTotalHours() != null)
+                    .mapToDouble(Attendance::getTotalHours)
+                    .sum();
+
             double overtimeHours = attendances.stream()
                     .filter(a -> a.getOvertimeHours() != null)
                     .mapToDouble(Attendance::getOvertimeHours)
                     .sum();
 
+            double standardHours = Math.max(0.0, totalHours - overtimeHours);
+
             double baseSalary = employee.getBaseSalary() == null ? 0D : employee.getBaseSalary();
             double hourlyRate = baseSalary / 160.0;
+
+            // Calculate earned base salary based on clocked working hours for all employees
+            double baseSalaryEarned = standardHours * hourlyRate;
+
             double overtimeRate = hourlyRate > 0 ? hourlyRate * 1.5 : 25.0;
             double overtimePay = overtimeHours * overtimeRate;
 
-            double grossSalary = baseSalary + overtimePay;
-            double deductions = batchRequest.defaultDeductions() == null ? 0D : batchRequest.defaultDeductions();
-            if (deductions < 0) {
-                deductions = 0D;
+            double grossSalary = baseSalaryEarned + overtimePay;
+            double defaultDeductions = batchRequest.defaultDeductions() == null ? 0D : batchRequest.defaultDeductions();
+            if (defaultDeductions < 0) {
+                defaultDeductions = 0D;
             }
-            double netPay = grossSalary - deductions;
+
+            // Calculate auto late penalty (beyond 3 free lates)
+            double latePenalty = 0.0;
+            double latePenaltyRate = 0.0;
+            if (employee.getShift() != null && employee.getShift().getLatePenaltyAmount() != null) {
+                latePenaltyRate = employee.getShift().getLatePenaltyAmount();
+                long lateCount = attendances.stream()
+                        .filter(a -> a.getStatus() == com.example.hr_managment_system.util.StatusUtil.LATE)
+                        .count();
+                long chargeableLates = Math.max(0, lateCount - 3);
+                latePenalty = chargeableLates * latePenaltyRate;
+            }
+
+            double netPay = grossSalary - defaultDeductions - latePenalty;
             if (netPay < 0) {
                 netPay = 0D;
             }
@@ -150,10 +201,13 @@ public class PayrollServiceImpl implements PayrollService {
             payroll.setMonth(batchRequest.month());
             payroll.setYear(batchRequest.year());
             payroll.setGrossSalary(grossSalary);
-            payroll.setDeductions(deductions);
+            payroll.setDeductions(defaultDeductions);
+            payroll.setLatePenalty(latePenalty);
+            payroll.setLatePenaltyRate(latePenaltyRate);
             payroll.setNetPay(netPay);
             payroll.setOvertimeHours(overtimeHours);
             payroll.setOvertimePay(overtimePay);
+            payroll.setTotalHours(totalHours);
             payroll.setStatus(com.example.hr_managment_system.util.StatusProgressUtil.PENDING);
             payroll.setProcessedAt(java.time.LocalDateTime.now());
             payrollRepository.save(payroll);
@@ -229,6 +283,13 @@ public class PayrollServiceImpl implements PayrollService {
                 .stream()
                 .map(payrollMapper::PayrolltoPayrollResponse)
                 .toList();
+    }
+
+    @Override
+    public void deletePayroll(String uuid) {
+        Payroll payroll = payrollRepository.findByPayrollId(uuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payroll record not found."));
+        payrollRepository.delete(payroll);
     }
 
     private void validatePayrollRequest(PayrollRequest payrollRequest) {

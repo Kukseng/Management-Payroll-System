@@ -380,6 +380,10 @@
                     if (statusEl) {
                         statusEl.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Location detection failed: ${err.message}</span>`;
                     }
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
                 });
             } else {
                 alert("Geolocation is not supported by this browser.");

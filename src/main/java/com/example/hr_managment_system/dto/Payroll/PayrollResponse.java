@@ -13,7 +13,10 @@ public record PayrollResponse(
         Double netPay,
         String status,
         Double overtimeHours,
-        Double overtimePay
+        Double overtimePay,
+        Double totalHours,
+        Double latePenalty,
+        Double latePenaltyRate
 ) {
 }
 // private Integer id;

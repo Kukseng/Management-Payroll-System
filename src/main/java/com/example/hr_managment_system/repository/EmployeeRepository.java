@@ -3,6 +3,9 @@ package com.example.hr_managment_system.repository;
 import com.example.hr_managment_system.domain.Employee;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,4 +30,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, String> {
     Optional<Employee> findByUsername(String username);
 
     List<Employee> findAllByIsActiveTrue();
+
+    @Modifying
+    @Query("UPDATE Employee e SET e.shift = null WHERE e.shift.shiftId = :shiftId")
+    void detachShiftFromEmployees(@Param("shiftId") String shiftId);
 }

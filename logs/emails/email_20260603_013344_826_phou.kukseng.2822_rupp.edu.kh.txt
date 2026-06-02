@@ -1,0 +1,19 @@
+==================================================
+SIMULATED OUTGOING EMAIL
+Timestamp: 2026-06-03T01:33:44.827114055
+To:        phou.kukseng.2822@rupp.edu.kh
+Subject:   Payslip Processed: 6/2026
+==================================================
+
+Hello Kukseng Phou,
+
+Your payslip for 6/2026 has been successfully processed.
+
+Net Pay: $245.00
+
+You can view details and download the PDF copy directly from your Compensation/My Payroll dashboard.
+
+Best regards,
+HR Management System
+
+==================================================
